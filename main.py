@@ -79,12 +79,17 @@ def main(
         aws_bucket=aws_bucket,
         Prefix=Prefix
     )
-
-    uploader.upload(find_files_in_dir(cfg.RESULT_DIR_EDIT)[:5])
+    upload_list = find_files_in_dir(cfg.RESULT_DIR_EDIT)[:5]
+    uploader.upload(upload_list)
 
 
 if __name__ == "__main__":
     import access_info as info
+    # main(aws_access_key_id=info.TEST_ACCESS_KEY_ID,
+    #      aws_secret_access_key=info.TEST_SECRET_ACCESS_KEY,
+    #      aws_bucket=info.TEST_BUCKET_NAME,
+    #      Prefix=info.TEST_ROOT)
+
     main(aws_access_key_id=info.TEST_ACCESS_KEY_ID,
          aws_secret_access_key=info.TEST_SECRET_ACCESS_KEY,
          aws_bucket=info.TEST_BUCKET_NAME,

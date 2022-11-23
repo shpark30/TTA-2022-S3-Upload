@@ -2,6 +2,7 @@ import os
 import re
 import boto3
 import botocore
+from tqdm import tqdm
 
 from utils import path_join, extract_task_id
 
@@ -58,14 +59,15 @@ class AwsS3Uploader():
             if self._s3_object_exists(to_path):
                 existed_num += 1
                 if not overwrite:
-                    to_paths[file_path] = to_path
+                    continue
+            to_paths[file_path] = to_path
 
         print("이미 업로드된 파일 수:", existed_num)
 
         if progress_bar:
-            bar = tqdm(to_path_list.items(), total=len(to_path_list))
+            bar = tqdm(to_paths.items(), total=len(to_paths))
         else:
-            bar = to_path_list.items()
+            bar = to_paths.items()
 
         for file_path, to_path in bar:
             try:
@@ -73,7 +75,6 @@ class AwsS3Uploader():
                 print(to_path)
             except Exception as e:
                 print(e)
-            upload_num += 1
 
     def _get_directories(self,
                          aws_bucket,
