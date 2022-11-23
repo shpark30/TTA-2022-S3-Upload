@@ -1,0 +1,15 @@
+# dataset
+test-data/
+
+# cache
+__pycache__
+
+# JetBrains Porject
+.idea/
+
+# private information
+access_info.py
+
+# notebook files
+.ipynb_checkpoints/
+*.ipynb
