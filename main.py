@@ -65,7 +65,7 @@ def main(
 
     # 수정할 파일명 찾기
     file_list = find_files_in_dir(
-        cfg.RESULT_DIR_ORIGINAL, pattern="\d-\d{3}-\d{3}")
+        cfg.RESULT_DIR_ORIGINAL, pattern="^((?!증적용).)*$")
 
     # 파일명 수정 및 New directory로 이동
     correct = Correct(file_list)
@@ -80,7 +80,7 @@ def main(
         Prefix=Prefix
     )
 
-    uploader.upload(find_files_in_dir(cfg.RESULT_DIR_EDIT))
+    uploader.upload(find_files_in_dir(cfg.RESULT_DIR_EDIT)[:5])
 
 
 if __name__ == "__main__":

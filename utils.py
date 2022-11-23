@@ -29,10 +29,8 @@ def find_files_in_dir(root, pattern=None):
             # print(path)
             result.extend(find_files_in_dir(path, pattern))
         if path.split(".")[-1] in ["csv", "xlsx"]:
-            if reg_pattern and reg_pattern.search(file) is None:
+            if reg_pattern and reg_pattern.search(path) is None:
                 continue
-            if "[1-026-073-HC]구문정확성검사_인공호흡기 작동 데이터 (메타데이터 ventilator)_221025.xlsx" in path:
-                print(path)
             result.append(path)
             continue
     return result

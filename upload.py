@@ -1,6 +1,7 @@
 import os
 import re
 import boto3
+import botocore
 
 from utils import path_join, extract_task_id
 
@@ -39,29 +40,40 @@ class AwsS3Uploader():
             Delimiter
         )
 
-    def upload(self, file_list, overwirte=False, progress_bar=True):
-        if progress_bar:
-            bar = tqdm(file_list, total=len(file_list))
-        else:
-            bar = file_list
-        for file_path in bar:
+    def upload(self, file_list, overwrite=False, progress_bar=True):
+        to_paths = {}
+        print("전체 파일 수:", len(file_list))
+        existed_num = 0
+        for file_path in file_list:
+            # validate
             self._validate_exist(file_path)
             file_name = file_path.split("/")[-1]
             self._validate_name_format(file_name)
 
+            # to_path setting
             task_number = extract_task_id(file_name)
             to_path = self.s3_dir[task_number]
             to_path = path_join(to_path, "사전", "검사 결과서", file_name)
 
-            # 이미 파일이 s3에 존재하고 덮어쓰기를 허용하지 않는 경우
-            if not overwrite and _s3_object_exists(to_path):
-                continue
+            if self._s3_object_exists(to_path):
+                existed_num += 1
+                if not overwrite:
+                    to_paths[file_path] = to_path
 
+        print("이미 업로드된 파일 수:", existed_num)
+
+        if progress_bar:
+            bar = tqdm(to_path_list.items(), total=len(to_path_list))
+        else:
+            bar = to_path_list.items()
+
+        for file_path, to_path in bar:
             try:
                 self.s3_client.upload_file(file_path, self.aws_bucket, to_path)
                 print(to_path)
             except Exception as e:
                 print(e)
+            upload_num += 1
 
     def _get_directories(self,
                          aws_bucket,
@@ -123,3 +135,7 @@ if __name__ == "__main__":
     # uploader.upload(path_join(root, from_files[0]))
     uploader.upload(
         "W:/2022 TTA/2022 사전 검사 결과서/[1-014-046-NL] 구문정확성사전검사결과_공감형 대화 데이터_220822.xlsx")
+
+
+# class TargetPathParser():
+#     def __
