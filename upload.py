@@ -115,7 +115,6 @@ class AwsS3Uploader():
         ]:
             target_folder_name = f"{ver}검사결과서"
             per_type_path = path_join(root, target_folder_name)
-        else:
 
         assert per_type_path is not None
         self.__validate_s3_object_exists(per_type_path)
