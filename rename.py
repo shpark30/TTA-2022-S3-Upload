@@ -63,7 +63,7 @@ class Correct(metaclass=RegistryMetaClass):
 
         for file_path in self.old_file_list:
             file_name = file_path.split("/")[-1]
-            self.new_file_list[file_path] = self._correct(file_name, p=p)
+            self.new_file_list[file_path] = self.__correct(file_name, p=p)
 
     def rename(self, root, p=False, progress_bar: bool = True):
         if not os.path.exists(root):
@@ -80,7 +80,7 @@ class Correct(metaclass=RegistryMetaClass):
 
         for old_file in bar:
             old_path = path_join(root, old_file)
-            new_path = path_join(root, self._correct(old_file, p=p))
+            new_path = path_join(root, self.__correct(old_file, p=p))
             if os.path.exists(new_path):
                 os.remove(new_path)
                 continue
@@ -124,7 +124,7 @@ class Correct(metaclass=RegistryMetaClass):
             if not os.path.exists(new_path):
                 shutil.copy(old_path, new_path)
 
-    def _correct(self, file_path: str, p=True) -> str:
+    def __correct(self, file_path: str, p=True) -> str:
         file_name = file_path.split("\\")[-1]
         prev_name = deepcopy(file_name)
         # if file_path == "페르소나 대화 데이터_형식오류목록_2022-08-25 14_07_54.csv":
@@ -153,21 +153,21 @@ class AddTaskId(Correct):
     """
     @classmethod
     def execute(cls, file_name):
-        file_name = cls._correct_task_id(file_name)
-        if cls._has_task_id(file_name):
+        file_name = cls.__correct_task_id(file_name)
+        if cls.__has_task_id(file_name):
             return file_name
-        file_name = cls._add_task_id(file_name)
+        file_name = cls.__add_task_id(file_name)
         return file_name
 
     @classmethod
-    def _has_task_id(cls, file_name) -> bool:
+    def __has_task_id(cls, file_name) -> bool:
         format = "\d-\d{3}-\d{3}"
         finder = re.compile(format)
         check = finder.search(file_name)
         return check is not None
 
     @classmethod
-    def _correct_task_id(cls, file_name) -> bool:
+    def __correct_task_id(cls, file_name) -> bool:
         """
         2-49-175 -> 2-049-175
         """
@@ -182,7 +182,7 @@ class AddTaskId(Correct):
         return file_name.replace(old, new)
 
     @classmethod
-    def _add_task_id(cls, file_name):
+    def __add_task_id(cls, file_name):
         data_name = file_name.split("_")[0]
         data_info = cls.data_info[cls.data_info["name"] == data_name]
         if len(data_info) == 0:
@@ -200,11 +200,11 @@ class AddTaskId(Correct):
 class CorrectWrongId(Correct):
     @classmethod
     def execute(cls, file_name):
-        file_name = cls._except_correct(file_name)
+        file_name = cls.__except_correct(file_name)
         return file_name
 
     @classmethod
-    def _except_correct(cls, file_name):
+    def __except_correct(cls, file_name):
         """ 예외 케이스 처리 """
         except_dict = {
             "2-019-294": "3-019-294",
@@ -237,11 +237,11 @@ class AddTaskCode(Correct):
         validate_pattern = re.compile(cls.CODE_PATTERN)
         if validate_pattern.search(file_name) is not None:
             return file_name
-        file_name = cls._add_code_in_task_id(file_name)
+        file_name = cls.__add_code_in_task_id(file_name)
         return file_name
 
     @classmethod
-    def _add_code_in_task_id(cls, file_name):
+    def __add_code_in_task_id(cls, file_name):
         error_find_pattern = re.compile(cls.NO_CODE_PATTERN)
         task_id = error_find_pattern.search(file_name)
         if task_id is None:
@@ -249,14 +249,14 @@ class AddTaskCode(Correct):
         start, end = task_id.span()
         old = file_name[start:end]
         try:
-            new = cls._add_code_to_number(old)
+            new = cls.__add_code_to_number(old)
         except Exception as e:
             print(file_name)
             raise
         return file_name.replace(old, new)
 
     @classmethod
-    def _add_code_to_number(cls, number):
+    def __add_code_to_number(cls, number):
         """ 1-001-001 -> 1-001-001-CV """
         match_series = cls.data_info[cls.data_info['number'] == number].apply(
             lambda row: row[0]+"-"+row[1], axis=1)
@@ -283,12 +283,12 @@ class CorrectTaskId(Correct):
         if validate_pattern.search(file_name) is not None:
             return file_name
 
-        file_name = cls._correct_underscore_in_task_id(file_name)
-        file_name = cls._correct_space_in_task_id(file_name)
+        file_name = cls.__correct_underscore_in_task_id(file_name)
+        file_name = cls.__correct_space_in_task_id(file_name)
         return file_name
 
     @classmethod
-    def _correct_underscore_in_task_id(cls, file_name):
+    def __correct_underscore_in_task_id(cls, file_name):
         format = "\d-\d{3}-\d{3}_[A-Z]{2}"
         underscore_find_pattern = re.compile(format)
         error = underscore_find_pattern.search(file_name)
@@ -300,7 +300,7 @@ class CorrectTaskId(Correct):
         return file_name.replace(old, new)
 
     @classmethod
-    def _correct_space_in_task_id(cls, file_name):
+    def __correct_space_in_task_id(cls, file_name):
         format = "\d-\d{3}-\d{3} [A-Z]{2}"
         underscore_find_pattern = re.compile(format)
         error = underscore_find_pattern.search(file_name)
@@ -330,7 +330,7 @@ class CorrectBracket(Correct):
         if validate_pattern.search(file_name) is not None:
             return file_name
 
-        start, end = cls._extract_task_id_range(file_name)
+        start, end = cls.__extract_task_id_range(file_name)
         # left bracket
         if start == 0:
             file_name = "[" + file_name
@@ -357,7 +357,7 @@ class CorrectBracket(Correct):
         return file_name
 
     @classmethod
-    def _extract_task_id_range(cls, file_name):
+    def __extract_task_id_range(cls, file_name):
         format = "\d{1}-\d{3}-\d{3}-[A-Z]{2}"
         finder = re.compile(format)
         task_id = finder.search(file_name)
@@ -365,19 +365,19 @@ class CorrectBracket(Correct):
             raise Exception(f"{file_name} 에 유효한 과제 아이디가 없습니다.")
         return task_id.span()
 
-    @classmethod
-    def _correct_underscore(cls, file_name):
-        format = "\_\d{1}-\d{3}-\d{3}-[A-Z]{2}\_"
-        finder = re.compile(format)
-        s, e = finder.search(file_name).span()
-        target = file_name[s:e]
-        file_name.replace(target, "[" + target[1:9])
-        pass
+    # @classmethod
+    # def _correct_underscore(cls, file_name):
+    #     format = "\_\d{1}-\d{3}-\d{3}-[A-Z]{2}\_"
+    #     finder = re.compile(format)
+    #     s, e = finder.search(file_name).span()
+    #     target = file_name[s:e]
+    #     file_name.replace(target, "[" + target[1:9])
+    #     pass
 
-    @classmethod
-    def _correct_parentheses(cls, file_name):
-        format = "\(\d{1}-\d{3}-\d{3}-[A-Z]{2}\)"
-        pass
+    # @classmethod
+    # def _correct_parentheses(cls, file_name):
+    #     format = "\(\d{1}-\d{3}-\d{3}-[A-Z]{2}\)"
+    #     pass
 
 #########################################################
 #########################################################
@@ -410,53 +410,53 @@ class CorrectDate(Correct):
         ^*hh mm ss$ -> ^*yymmdd$
         """
         # date formatting
-        file_name = cls._edit_date_format(file_name)
+        file_name = cls.__edit_date_format(file_name)
 
         # remove hh mm ss
         for time_format in cls.time_list:
-            time = cls._find(file_name, time_format)
+            time = cls.__find_date(file_name, time_format)
             if time is None:
                 continue
             file_name = file_name.replace(time, "")
 
         # 수동 수정
-        file_name = cls._correct_manual(file_name)
+        file_name = cls.__correct_manually(file_name)
 
         # 날짜가 없으면 추가
-        if not cls._is_date_in(file_name):
-            file_name = cls._add_date(file_name)
+        if not cls.__is_date_in(file_name):
+            file_name = cls.__add_date(file_name)
 
         # 날짜 범위 수정
-        file_name = cls._correct_date_range(file_name)
+        file_name = cls.__correct_date_range(file_name)
 
         # validate & #
-        date = cls._extract_date_part(file_name)
+        date = cls.__extract_date_part(file_name)
         try:
-            cls._validate_dateformat(date)
+            cls.__validate_date_format(date)
         except Exception as e:
             print(file_name)
             raise e
         return file_name
 
     @classmethod
-    def _correct_manual(cls, file_name):
+    def __correct_manually(cls, file_name):
         for old, new in cls.manual.items():
             if old in file_name:
                 file_name = file_name.replace(old, new)
         return file_name
 
     @classmethod
-    def _edit_date_format(cls, input):
+    def __edit_date_format(cls, input):
         for date_format, indices in cls.date_dict.items():
-            date = cls._find(input, date_format)  # None or Date
+            date = cls.__find_date(input, date_format)  # None or Date
             if date is None:
                 continue
-            new_date = "".join([cls.slicing(date, i) for i in indices])
+            new_date = "".join([date[i[0]:i[1]] for i in indices])
             input = input.replace(date, new_date)
         return input
 
     @classmethod
-    def _is_date_in(cls, file_name: str) -> bool:
+    def __is_date_in(cls, file_name: str) -> bool:
         check_every_format = []
         for date_format in cls.date_dict.keys():
             finder = re.compile(date_format)
@@ -465,8 +465,8 @@ class CorrectDate(Correct):
         return any(check_every_format)
 
     @classmethod
-    def _correct_date_range(cls, file_name):
-        date = cls._find(file_name, "22\d{4}")
+    def __correct_date_range(cls, file_name):
+        date = cls.__find_date(file_name, "22\d{4}")
         if date is None:
             raise Exception(f"{file_name} 에 6자리 유효한 날짜 형식이 없습니다.")
 
@@ -478,20 +478,20 @@ class CorrectDate(Correct):
             # raise Exception(f"{file_name}에 유효한 날짜 형식(범위 포함)이 없습니다.")
 
         # edit wrong date to complete date
-        complete_date = cls._find_complete_date(file_name)
+        complete_date = cls.__find_complete_date(file_name)
         file_name = file_name.replace(date, complete_date)
         return file_name
 
     @classmethod
-    def _add_date(cls, file_name):
+    def __add_date(cls, file_name):
         """ 파일명에 날짜 추가 """
-        complete_date = cls._find_complete_date(file_name)
+        complete_date = cls.__find_complete_date(file_name)
         delimiter = "."
         splitted = file_name.split(delimiter)
         return f"{delimiter.join(splitted[:-1])}_{complete_date}.{splitted[-1]}"
 
     @ classmethod
-    def _find_complete_date(cls, file_name):
+    def __find_complete_date(cls, file_name):
         task_id = extract_task_id(file_name)
         complete_date = cls.data_info[cls.data_info["number"]
                                       == task_id]["complete_date"]
@@ -500,19 +500,15 @@ class CorrectDate(Correct):
         if len(complete_date) > 1:
             raise Exception(f"과제 번호({task_id})가 master table에 여러 개 들어있습니다.")
         complete_date = complete_date.tolist()[0]
-        complete_date = cls._edit_date_format(complete_date)
+        complete_date = cls.__edit_date_format(complete_date)
         return complete_date
 
     @classmethod
-    def _extract_date_part(cls, file_name):
+    def __extract_date_part(cls, file_name):
         return file_name.split("_")[-1].split(".")[0]
 
     @ classmethod
-    def slicing(cls, string: str, index_tuple: tuple) -> str:
-        return string[index_tuple[0]: index_tuple[1]]
-
-    @ classmethod
-    def _find(cls, date_part, date_format):
+    def __find_date(cls, date_part, date_format):
         date_finder = re.compile(date_format)
         date = date_finder.search(date_part)
         if date is None:
@@ -521,7 +517,7 @@ class CorrectDate(Correct):
         return date_part[start: end]
 
     @ classmethod
-    def _validate_dateformat(cls, date):
+    def __validate_date_format(cls, date):
         date_finder = re.compile(cfg.DATE_FORMAT)
         if date_finder.match(date) is None:
             raise Exception("날짜 형식이 완벽하게 수정되지 않았습니다.")
@@ -573,18 +569,18 @@ class CorrectResultType(Correct):
 
     @ classmethod
     def execute(cls, file_name):
-        file_name = cls._apply_rename_dict(file_name)
-        file_name = cls._apply_reg_dict(file_name)
+        file_name = cls.__apply_rename_dict(file_name)
+        file_name = cls.__apply_reg_dict(file_name)
         return file_name
 
     @ classmethod
-    def _apply_rename_dict(cls, file_name):
+    def __apply_rename_dict(cls, file_name):
         for error, right in cls.rename_dict.items():
             file_name = file_name.replace(error, right)
         return file_name
 
     @ classmethod
-    def _apply_reg_dict(cls, file_name):
+    def __apply_reg_dict(cls, file_name):
         for format, edit in cls.reg_dict.items():
             finder = re.compile(format)
             error = finder.search(file_name)
@@ -604,11 +600,11 @@ class CorrectSequence(Correct):
     """
     @ classmethod
     def execute(cls, file_name):
-        file_name = cls._change_result_type_order(file_name)
+        file_name = cls.__change_result_type_order(file_name)
         return file_name
 
     @ classmethod
-    def _change_result_type_order(cls, file_name):
+    def __change_result_type_order(cls, file_name):
         result_types = [
             '구문정확성사전검사결과',
             '통계다양성사전검사결과',
@@ -634,13 +630,13 @@ class CorrectSpace(Correct):
 
     @ classmethod
     def execute(cls, file_name):
-        file_name = cls.correct_zero_space(file_name)
-        file_name = cls.correct_many_space(file_name)
-        file_name = cls.correct_space_dot(file_name)
+        file_name = cls.__correct_zero_space(file_name)
+        file_name = cls.__correct_many_space(file_name)
+        file_name = cls.__correct_space_dot(file_name)
         return file_name
 
     @ classmethod
-    def correct_zero_space(cls, file_name):
+    def __correct_zero_space(cls, file_name):
         format = "\](구문|통계|사전)"
         finder = re.compile(format)
         error = finder.search(file_name)
@@ -653,7 +649,7 @@ class CorrectSpace(Correct):
         return file_name.replace(error_text, edit)
 
     @ classmethod
-    def correct_many_space(cls, file_name):
+    def __correct_many_space(cls, file_name):
         format = "\s{2,}"
         finder = re.compile(format)
         while True:
@@ -664,7 +660,7 @@ class CorrectSpace(Correct):
         return file_name
 
     @ classmethod
-    def correct_space_dot(cls, file_name):
+    def __correct_space_dot(cls, file_name):
         """ "yymmdd .xlsx" - > "yymmdd.xlsx" """
         finder = re.compile(f"\.{cfg.EXTENSION_FORMAT}")
         find = finder.search(file_name)
@@ -684,11 +680,11 @@ class CorrectDelimiter(Correct):
 
     @ classmethod
     def execute(cls, file_name):
-        file_name = cls._around_result_type(file_name)
+        file_name = cls.__around_result_type(file_name)
         return file_name
 
     @classmethod
-    def _around_result_type(cls, file_name):
+    def __around_result_type(cls, file_name):
         """
         [2-060-190-MA] 통계다양성사전검사결과 2차_3D프린팅 출력물 형상 보정용 데이터 (수축분석)_221115.xlsx
         -> [2-060-190-MA] 통계다양성사전검사결과_2차_3D프린팅 출력물 형상 보정용 데이터 (수축분석)_221115.xlsx
@@ -719,11 +715,11 @@ class CorrectDelimiter(Correct):
 class CorrectRepeatExtension(Correct):
     @ classmethod
     def execute(cls, file_name):
-        file_name = cls._remove_duplicated_extension(file_name)
+        file_name = cls.__remove_duplicated_extension(file_name)
         return file_name
 
     @classmethod
-    def _remove_duplicated_extension(cls, file_name):
+    def __remove_duplicated_extension(cls, file_name):
         # if file_name == "[2-095-236-EN] 사전검사형식오류목록_지하수 수량·수질 데이터 (이용량)_221020.csv.csv":
         #     import pdb
         #     pdb.set_trace()

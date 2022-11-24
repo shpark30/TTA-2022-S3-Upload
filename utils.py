@@ -48,6 +48,13 @@ def extract_task_id(input: str):
     return input[start:end]
 
 
+def extract_report_type(file_name):
+    id_type = file_name.split("_")[0]
+    report_type = id_type.split("]")[1]  # task id 분리
+    report_type = report_type[1:]  # 첫글자 공백 제거
+    return report_type
+
+
 def validate_name_format(file_name):
     validator = re.compile(cfg.FILE_NAME_FORMAT)
     if validator.match(file_name) is None:
