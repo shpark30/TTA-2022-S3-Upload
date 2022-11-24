@@ -6,11 +6,26 @@ from tqdm import tqdm
 import re
 import os
 
-from utils import path_join, extract_task_id
+from utils import path_join, extract_task_id, validate_name_format
 import local_config as cfg
 from collections import OrderedDict
 
 # 메타클래스 정의(클래스를 생성하는 클래스)
+
+"""
+[
+    'AddTaskId',
+    'CorrectWrongId',
+    'AddTaskCode',
+    'CorrectTaskId', 
+    'CorrectBracket', 
+    'CorrectDate', 
+    'CorrectResultType', 
+    'CorrectSequence', 
+    'CorrectSpace',
+    'CorrectDelimiter'
+]
+"""
 
 
 class RegistryMetaClass(type):
@@ -39,7 +54,7 @@ class Correct(metaclass=RegistryMetaClass):
         self.old_file_list = file_list
         self.new_file_list = {}
 
-    def execute(self, p=True):
+    def execute(self, p=False):
         if len(self.new_file_list):
             print("이미 execute를 실행했습니다.")
             return
@@ -50,7 +65,7 @@ class Correct(metaclass=RegistryMetaClass):
             file_name = file_path.split("/")[-1]
             self.new_file_list[file_path] = self._correct(file_name, p=p)
 
-    def rename(self, root, progress_bar: bool = True):
+    def rename(self, root, p=False, progress_bar: bool = True):
         if not os.path.exists(root):
             print(f"{root} 경로가 존재하지 않습니다.")
             return
@@ -65,7 +80,10 @@ class Correct(metaclass=RegistryMetaClass):
 
         for old_file in bar:
             old_path = path_join(root, old_file)
-            new_path = path_join(root, self._correct(old_file, p=False))
+            new_path = path_join(root, self._correct(old_file, p=p))
+            if os.path.exists(new_path):
+                os.remove(new_path)
+                continue
             os.rename(old_path, new_path)
 
     def copy_to(self, root, overwrite=False, progress_bar: bool = True):
@@ -95,17 +113,6 @@ class Correct(metaclass=RegistryMetaClass):
         print("이름이 이미 수정된 파일 수:", existed_num)
         print("새로운 파일 수:", len(self.new_file_list) - existed_num)
 
-        exit = False
-        for old_path, new_name in file_list.items():
-            if "/" in new_name:
-                print("새로운 파일 이름에 경로 구분자(/, \\)가 들어있습니다.")
-                print("기존: " + old_path)
-                print("수정: " + new_name)
-                print("")
-                exit = True
-        if exit:
-            return
-
         if progress_bar:
             bar = tqdm(file_list.items(),
                        total=len(file_list))
@@ -120,8 +127,18 @@ class Correct(metaclass=RegistryMetaClass):
     def _correct(self, file_path: str, p=True) -> str:
         file_name = file_path.split("\\")[-1]
         prev_name = deepcopy(file_name)
+        # if file_path == "페르소나 대화 데이터_형식오류목록_2022-08-25 14_07_54.csv":
+        #     import pdb
+        # pdb.set_trace()
         for name, sub_class in self.REGISTRY.items():
             file_name = sub_class.execute(file_name)
+        try:
+            validate_name_format(file_name)
+        except ValueError as e:
+            print("before:", file_path)
+            print("after:", file_name)
+            raise e
+
         if p and prev_name != file_name:
             print("기존: " + prev_name)
             print("변경: " + file_name)
@@ -190,7 +207,8 @@ class CorrectWrongId(Correct):
     def _except_correct(cls, file_name):
         """ 예외 케이스 처리 """
         except_dict = {
-            "2-019-294": "3-019-294"
+            "2-019-294": "3-019-294",
+            "2-062-194": "2-063-194"
         }
 
         for old, new in except_dict.items():
@@ -208,13 +226,13 @@ class AddTaskCode(Correct):
 
     @classmethod
     def execute(cls, file_name):
-        """ 
-        _1-001-001_ 구문정확성사전검사결과... 
+        """
+        _1-001-001_ 구문정확성사전검사결과...
         - > _1-001-001-CV_ 구문정확성사전검사결과...
 
         [1-001-001_CV] 구문정확성사전검사결과...
         [1-001-001] 구문정확성사전검사결과...
-        - > [1-001-001-CV] 구문정확성사전검사결과... 
+        - > [1-001-001-CV] 구문정확성사전검사결과...
         """
         validate_pattern = re.compile(cls.CODE_PATTERN)
         if validate_pattern.search(file_name) is not None:
@@ -257,9 +275,9 @@ class CorrectTaskId(Correct):
 
     @classmethod
     def execute(cls, file_name):
-        """ 
-        [1-001-001_CV] 구문정확성사전검사결과... - > [1-001-001-CV] 구문정확성사전검사결과... 
-        [1-001-001] 구문정확성사전검사결과... - > [1-001-001-CV] 구문정확성사전검사결과... 
+        """
+        [1-001-001_CV] 구문정확성사전검사결과... - > [1-001-001-CV] 구문정확성사전검사결과...
+        [1-001-001] 구문정확성사전검사결과... - > [1-001-001-CV] 구문정확성사전검사결과...
         """
         validate_pattern = re.compile(cls.AVAILABLE_PATTERN)
         if validate_pattern.search(file_name) is not None:
@@ -304,7 +322,7 @@ class CorrectBracket(Correct):
 
     -> x-xxx-xxx
     """
-    AVAILABLE_PATTERN = "\[\d-\d{3}-\d{3}-[A-Z]{2}\]"
+    AVAILABLE_PATTERN = "\[\d-\d{3}-\d{3}-[A-Z]{2}\] "
 
     @classmethod
     def execute(cls, file_name):
@@ -326,6 +344,7 @@ class CorrectBracket(Correct):
         if file_name[end:end+2] == ")_":
             file_name = file_name[:end] + "]" + file_name[end+2:]
         elif file_name[end:end+2] == "]_":  # "_" : end+1
+            print(file_name)
             file_name = file_name[:end+1] + file_name[end+2:]
         elif file_name[end] in ["_", ")"]:
             file_name = file_name[:end] + "]" + file_name[end+1:]
@@ -379,6 +398,11 @@ class CorrectDate(Correct):
         " \d{2} \d{2} \d{2}"
     ]
 
+    manual = {
+        "2200906": "220906",
+        "229020": "220920"
+    }
+
     @classmethod
     def execute(cls, file_name):
         """
@@ -386,7 +410,7 @@ class CorrectDate(Correct):
         ^*hh mm ss$ -> ^*yymmdd$
         """
         # date formatting
-        file_name = cls._edit_date(file_name)
+        file_name = cls._edit_date_format(file_name)
 
         # remove hh mm ss
         for time_format in cls.time_list:
@@ -395,9 +419,15 @@ class CorrectDate(Correct):
                 continue
             file_name = file_name.replace(time, "")
 
+        # 수동 수정
+        file_name = cls._correct_manual(file_name)
+
         # 날짜가 없으면 추가
         if not cls._is_date_in(file_name):
             file_name = cls._add_date(file_name)
+
+        # 날짜 범위 수정
+        file_name = cls._correct_date_range(file_name)
 
         # validate & #
         date = cls._extract_date_part(file_name)
@@ -409,7 +439,14 @@ class CorrectDate(Correct):
         return file_name
 
     @classmethod
-    def _edit_date(cls, input):
+    def _correct_manual(cls, file_name):
+        for old, new in cls.manual.items():
+            if old in file_name:
+                file_name = file_name.replace(old, new)
+        return file_name
+
+    @classmethod
+    def _edit_date_format(cls, input):
         for date_format, indices in cls.date_dict.items():
             date = cls._find(input, date_format)  # None or Date
             if date is None:
@@ -428,55 +465,86 @@ class CorrectDate(Correct):
         return any(check_every_format)
 
     @classmethod
+    def _correct_date_range(cls, file_name):
+        date = cls._find(file_name, "22\d{4}")
+        if date is None:
+            raise Exception(f"{file_name} 에 6자리 유효한 날짜 형식이 없습니다.")
+
+        # check
+        finder = re.compile(cfg.DATE_FORMAT)
+        find = finder.search(file_name)
+        if find is not None:
+            return file_name
+            # raise Exception(f"{file_name}에 유효한 날짜 형식(범위 포함)이 없습니다.")
+
+        # edit wrong date to complete date
+        complete_date = cls._find_complete_date(file_name)
+        file_name = file_name.replace(date, complete_date)
+        return file_name
+
+    @classmethod
     def _add_date(cls, file_name):
         """ 파일명에 날짜 추가 """
+        complete_date = cls._find_complete_date(file_name)
+        delimiter = "."
+        splitted = file_name.split(delimiter)
+        return f"{delimiter.join(splitted[:-1])}_{complete_date}.{splitted[-1]}"
+
+    @ classmethod
+    def _find_complete_date(cls, file_name):
         task_id = extract_task_id(file_name)
         complete_date = cls.data_info[cls.data_info["number"]
                                       == task_id]["complete_date"]
         if len(complete_date) == 0:
-            raise Exception(f"과제 번호({number})가 master table에 없습니다.")
+            raise Exception(f"과제 번호({task_id})가 master table에 없습니다.")
         if len(complete_date) > 1:
-            raise Exception(f"과제 번호({number})가 master table에 여러 개 들어있습니다.")
-        complete_date = cls._edit_date(complete_date.tolist()[0])
-        delimiter = "."
-        splitted = file_name.split(delimiter)
-        return f"{delimiter.join(splitted[:-1])}_{complete_date}.{splitted[-1]}"
+            raise Exception(f"과제 번호({task_id})가 master table에 여러 개 들어있습니다.")
+        complete_date = complete_date.tolist()[0]
+        complete_date = cls._edit_date_format(complete_date)
+        return complete_date
 
     @classmethod
     def _extract_date_part(cls, file_name):
         return file_name.split("_")[-1].split(".")[0]
 
-    @classmethod
+    @ classmethod
     def slicing(cls, string: str, index_tuple: tuple) -> str:
         return string[index_tuple[0]: index_tuple[1]]
 
-    @classmethod
+    @ classmethod
     def _find(cls, date_part, date_format):
         date_finder = re.compile(date_format)
         date = date_finder.search(date_part)
         if date is None:
             return None
         start, end = date.span()
-        return date_part[start:end]
+        return date_part[start: end]
 
-    @classmethod
+    @ classmethod
     def _validate_dateformat(cls, date):
-        date_finder = re.compile("\d{6}")
+        date_finder = re.compile(cfg.DATE_FORMAT)
         if date_finder.match(date) is None:
             raise Exception("날짜 형식이 완벽하게 수정되지 않았습니다.")
 
 
 class CorrectResultType(Correct):
     rename_dict = {
+        '구문정확성사전검사결괴': '구문정확성사전검사결과',
+        '구문정확성서전검사결과': '구문정확성사전검사결과',
         '구문정확성검사': '구문정확성사전검사결과',
         '통계다양성검사': '통계다양성사전검사결과',
-        '사전검사사전검사': ""
+        '오류로그목록': '사전검사형식오류목록',
+
+        '구문정확성사전검사결과_구조오류목록': '사전검사구조오류목록',
+        '구문정확성사전검사결과_형식오류목록': '사전검사형식오류목록',
+        '구문정확성사전검사결과_파일오류목록': '사전검사파일오류목록',
+        # '사전검사사전검사': ""
     }
 
     reg_dict = {
-        '((?!사전검사)형식오류목록)': '사전검사형식오류목록',
-        '((?!사전검사)파일오류목록)': '사전검사파일오류목록',
-        '((?!사전검사)구조오류목록)': '사전검사구조오류목록',
+        '((?<!사전검사)형식오류목록)': '사전검사형식오류목록',
+        '((?<!사전검사)파일오류목록)': '사전검사파일오류목록',
+        '((?<!사전검사)구조오류목록)': '사전검사구조오류목록',
     }
 
     # rename_dict1 = {
@@ -503,19 +571,19 @@ class CorrectResultType(Correct):
     #     ']통계다양성사전검사결과': '] 통계다양성사전검사결과',
     # }
 
-    @classmethod
+    @ classmethod
     def execute(cls, file_name):
         file_name = cls._apply_rename_dict(file_name)
         file_name = cls._apply_reg_dict(file_name)
         return file_name
 
-    @classmethod
+    @ classmethod
     def _apply_rename_dict(cls, file_name):
         for error, right in cls.rename_dict.items():
             file_name = file_name.replace(error, right)
         return file_name
 
-    @classmethod
+    @ classmethod
     def _apply_reg_dict(cls, file_name):
         for format, edit in cls.reg_dict.items():
             finder = re.compile(format)
@@ -523,7 +591,7 @@ class CorrectResultType(Correct):
             if error is None:
                 continue
             s, e = error.span()
-            error_text = file_name[s:e]
+            error_text = file_name[s: e]
             file_name = file_name.replace(error_text, edit)
         return file_name
 
@@ -532,13 +600,14 @@ class CorrectSequence(Correct):
     """
     [1-014-044-NL] 페르소나 대화 데이터_사전검사형식오류목록_220825.csv
     -> [1-014-044-NL] 사전검사형식오류목록_페르소나 대화 데이터_220825.csv
+
     """
-    @classmethod
+    @ classmethod
     def execute(cls, file_name):
         file_name = cls._change_result_type_order(file_name)
         return file_name
 
-    @classmethod
+    @ classmethod
     def _change_result_type_order(cls, file_name):
         result_types = [
             '구문정확성사전검사결과',
@@ -547,10 +616,11 @@ class CorrectSequence(Correct):
             '사전검사파일오류목록',
             '사전검사구조오류목록',
         ]
+
         splitted = file_name.split("_")
         if splitted[1] not in result_types:
             return file_name
-        task_id_name = splitted[0].split("]")
+        task_id_name = splitted[0].split("] ")
         task_id = task_id_name[0] + "]"
         task_name = task_id_name[1]
         result_type = splitted[1]
@@ -562,27 +632,27 @@ class CorrectSequence(Correct):
 
 class CorrectSpace(Correct):
 
-    @classmethod
+    @ classmethod
     def execute(cls, file_name):
         file_name = cls.correct_zero_space(file_name)
         file_name = cls.correct_many_space(file_name)
+        file_name = cls.correct_space_dot(file_name)
         return file_name
 
-    @classmethod
+    @ classmethod
     def correct_zero_space(cls, file_name):
         format = "\](구문|통계|사전)"
         finder = re.compile(format)
         error = finder.search(file_name)
         if error is None:
-            print(file_name)
             return file_name
 
         s, e = error.span()
-        error_text = file_name[s:e]
-        edit = error_text[:1] + " " + error_text[1:]
+        error_text = file_name[s: e]
+        edit = error_text[: 1] + " " + error_text[1:]
         return file_name.replace(error_text, edit)
 
-    @classmethod
+    @ classmethod
     def correct_many_space(cls, file_name):
         format = "\s{2,}"
         finder = re.compile(format)
@@ -593,13 +663,90 @@ class CorrectSpace(Correct):
             file_name = file_name.replace("  ", " ")
         return file_name
 
+    @ classmethod
+    def correct_space_dot(cls, file_name):
+        """ "yymmdd .xlsx" - > "yymmdd.xlsx" """
+        finder = re.compile(f"\.{cfg.EXTENSION_FORMAT}")
+        find = finder.search(file_name)
+        if find is None:
+            return file_name
+
+        s = find.start()
+        if file_name[s-1] == " ":
+            file_name = file_name[:s-1] + file_name[s:]
+        return file_name
+
+
+class CorrectDelimiter(Correct):
+    """
+    결과서 타입이 명확해야 하기 때문에 CorrectResultType 이후에 동작해야 함.
+    """
+
+    @ classmethod
+    def execute(cls, file_name):
+        file_name = cls._around_result_type(file_name)
+        return file_name
+
+    @classmethod
+    def _around_result_type(cls, file_name):
+        """
+        [2-060-190-MA] 통계다양성사전검사결과 2차_3D프린팅 출력물 형상 보정용 데이터 (수축분석)_221115.xlsx
+        -> [2-060-190-MA] 통계다양성사전검사결과_2차_3D프린팅 출력물 형상 보정용 데이터 (수축분석)_221115.xlsx
+        """
+        # if file_name == "[2-060-190-MA] 통계다양성사전검사결과 2차_3D프린팅 출력물 형상 보정용 데이터 (수축분석)_221115.xlsx":
+        #     import pdb
+        #     pdb.set_trace()
+        finder = re.compile(cfg.RESULT_TYPE_FORMAT)
+        find = finder.search(file_name)
+
+        if find is None:
+            raise Exception(
+                f"{file_name} 에 유효한 문서 타입이 없습니다. CorrectResultType을 점검해주세요.")
+
+        e = find.end()
+        if file_name[e] == " ":
+            file_name = file_name[:e] + "_" + file_name[e+1:]
+            return file_name
+
+        finder = re.compile("[가-힣a-zA-Z0-9]")
+        find = finder.match(file_name[e])
+        if find is None:
+            return file_name
+        file_name = file_name[:e] + "_" + file_name[e:]
+        return file_name
+
+
+class CorrectRepeatExtension(Correct):
+    @ classmethod
+    def execute(cls, file_name):
+        file_name = cls._remove_duplicated_extension(file_name)
+        return file_name
+
+    @classmethod
+    def _remove_duplicated_extension(cls, file_name):
+        # if file_name == "[2-095-236-EN] 사전검사형식오류목록_지하수 수량·수질 데이터 (이용량)_221020.csv.csv":
+        #     import pdb
+        #     pdb.set_trace()
+        finder = re.compile(f"\.{cfg.EXTENSION_FORMAT}")
+
+        find_list = []
+        for find in finder.finditer(file_name):
+            find_list.append(find)
+
+        # 마지막 빼고 모두 제거
+        if len(find_list) > 1:
+            for find in find_list[:-1]:
+                file_name = file_name.replace(find.group(), "", 1)
+
+        return file_name
+
 
 # Test
 if __name__ == "__main__":
     root = "C:/Users/seohy/workspace/upload_S3/test-data/사전검사결과"
     file_list = [
         # 날짜 형식 테스트
-        "[1-001-002-CV] 구문정확성사전검사결과_비디오 전환 경계 추론 데이터_2022-09-27 09 11 42.xlsx"
+        "[1-001-002-CV] 구문정확성사전검사결과_비디오 전환 경계 추론 데이터_2022-09-27 09 11 42.xlsx",
         "[1-001-002-CV] 구문정확성사전검사결과_비디오 전환 경계 추론 데이터_2022-09-27.xlsx",
 
         "[1-001-002-CV]구문정확성사전검사결과_비디오 전환 경계 추론 데이터_220927.xlsx",
@@ -620,11 +767,15 @@ if __name__ == "__main__":
         "(1-001-002) 구문정확성사전검사결과_비디오 전환 경계 추론 데이터_2022-09-27.xlsx",
 
         "(1-001-002)  형식오류목록_비디오 전환 경계 추론 데이터_2022-09-27.xlsx",
+        "(1-001-002)  사전검사형식오류목록_비디오 전환 경계 추론 데이터_2022-09-27.xlsx",
+        "페르소나 대화 데이터_형식오류목록_2022-08-25 14_07_54.csv",
 
-        "페르소나 대화 데이터_형식오류목록_2022-08-25 14_07_54.csv"
+        "[2-095-236-EN] 사전검사형식오류목록_지하수 수량·수질 데이터 (이용량)_221020.csv.csv",
     ]
     file_list = [path_join(root, file) for file in file_list]
     correct = Correct(file_list)
-    correct.execute()
+    correct.execute(p=True)
+    # correct.copy_to(cfg.RESULT_DIR_EDIT)
+
     # correct.rename(cfg.RESULT_DIR_EDIT)
     # correct.rename(new_root)

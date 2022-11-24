@@ -1,3 +1,10 @@
 DATA_INFO_PATH = "C:/Users/seohy/workspace/upload_S3/test-data/data_info.csv"
 RESULT_DIR_ORIGINAL = "W:/2022 TTA/2022 사전 검사 결과서/검사 결과/ORIGINAL"
 RESULT_DIR_EDIT = "W:/2022 TTA/2022 사전 검사 결과서/검사 결과/EDIT"
+
+ID_FORMAT = "\d-\d{3}-\d{3}"
+CATEGORY_FORMAT = "[A-Z]{2}"
+RESULT_TYPE_FORMAT = "(구문정확성사전검사결과|통계다양성사전검사결과|사전검사형식오류목록|사전검사구조오류목록|사전검사파일오류목록)"
+DATE_FORMAT = "22(08|09|10|11|12)(31|30|[0-2][0-9])"
+EXTENSION_FORMAT = "(csv|xlsx|docs|json)"
+FILE_NAME_FORMAT = f"^\[{ID_FORMAT}-{CATEGORY_FORMAT}\] {RESULT_TYPE_FORMAT}_.+_{DATE_FORMAT}\.{EXTENSION_FORMAT}$"

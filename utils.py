@@ -1,6 +1,7 @@
 import pandas as pd
 import os
 import re
+import local_config as cfg
 
 
 def get_task_num(file_name: str) -> str:
@@ -45,6 +46,12 @@ def extract_task_id(input: str):
         raise AttributeError(
             f"\"{input}\"에 유효한 과제 번호[x-xxx-xxx]가 포함되지 않았습니다.")
     return input[start:end]
+
+
+def validate_name_format(file_name):
+    validator = re.compile(cfg.FILE_NAME_FORMAT)
+    if validator.match(file_name) is None:
+        raise ValueError(f"{file_name}이 유효한 파일명 형식이 아닙니다.")
 
 
 if __name__ == "__main__":
