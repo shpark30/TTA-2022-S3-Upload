@@ -99,9 +99,7 @@ class AwsS3Uploader():
         root = path_join(info.ROOT, "취합본")
 
         if self.__is_third_party_outsourced(file_name):
-            root = path_join(info.ROOT, "기타", "제3자검증")
-        else:
-            root = path_join(info.ROOT, "취합본")
+            root = path_join(root, "기타", "제3자검증")
 
         per_type_path = None
         report_type = extract_report_type(file_name)
