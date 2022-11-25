@@ -348,9 +348,9 @@ class CorrectBracket(Correct):
             file_name = file_name[:end+1] + file_name[end+2:]
         elif file_name[end] in ["_", ")"]:
             file_name = file_name[:end] + "]" + file_name[end+1:]
-        elif file_name[end] is " ":
+        elif file_name[end] == " ":
             file_name = file_name[:end] + "]" + file_name[end:]
-        elif file_name[end] is "]":
+        elif file_name[end] == "]":
             pass
         else:  # file_name[end+1]에서 띄어쓰기 없이 바로 가는 경우
             file_name = file_name[:end] + "]" + file_name[end:]
