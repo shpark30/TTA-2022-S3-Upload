@@ -385,6 +385,19 @@ class CorrectBracket(Correct):
 #########################################################
 
 
+class CorrectDuplication(Correct):
+    @classmethod
+    def execute(cls, file_name):
+        finder = re.compile(f"\(\d\)\.{cfg.EXTENSION_FORMAT}")
+        find = finder.search(file_name)
+        if find is None:
+            return file_name
+
+        s = find.start()
+        file_name = file_name[:s] + file_name[s+3:]
+        return file_name
+
+
 class CorrectDate(Correct):
     """ [year(start, end), month(start, end), day(start, end)] """
     date_dict = {
@@ -767,6 +780,8 @@ if __name__ == "__main__":
         "페르소나 대화 데이터_형식오류목록_2022-08-25 14_07_54.csv",
 
         "[2-095-236-EN] 사전검사형식오류목록_지하수 수량·수질 데이터 (이용량)_221020.csv.csv",
+
+        "[2-095-236-EN] 사전검사형식오류목록_지하수 수량·수질 데이터 (이용량)_221020 (1).csv",
     ]
     file_list = [path_join(root, file) for file in file_list]
     correct = Correct(file_list)
