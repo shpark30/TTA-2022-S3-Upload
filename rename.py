@@ -63,7 +63,7 @@ class Correct(metaclass=RegistryMetaClass):
 
         for file_path in self.old_file_list:
             file_name = file_path.split("/")[-1]
-            self.new_file_list[file_path] = self.__correct(file_name, p=p)
+            self.new_file_list[file_path] = self.correct(file_name, p=p)
 
     def rename(self, root, p=False, progress_bar: bool = True):
         if not os.path.exists(root):
@@ -80,7 +80,7 @@ class Correct(metaclass=RegistryMetaClass):
 
         for old_file in bar:
             old_path = path_join(root, old_file)
-            new_path = path_join(root, self.__correct(old_file, p=p))
+            new_path = path_join(root, self.correct(old_file, p=p))
             if os.path.exists(new_path):
                 os.remove(new_path)
                 continue
@@ -124,7 +124,7 @@ class Correct(metaclass=RegistryMetaClass):
             if not os.path.exists(new_path):
                 shutil.copy(old_path, new_path)
 
-    def __correct(self, file_path: str, p=True) -> str:
+    def correct(self, file_path: str, p=True) -> str:
         file_name = file_path.split("\\")[-1]
         prev_name = deepcopy(file_name)
         # if file_path == "페르소나 대화 데이터_형식오류목록_2022-08-25 14_07_54.csv":
