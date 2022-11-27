@@ -56,6 +56,11 @@ def extract_report_type(file_name):
 
 
 def validate_name_format(file_name):
+    # Type
+    if not isinstance(file_name, str):
+        raise TypeError(f"{file_name}이 유효한 타입(str)이 아닙니다.")
+
+    # Name Format
     validator = re.compile(cfg.FILE_NAME_FORMAT)
     if validator.match(file_name) is None:
         raise ValueError(f"{file_name}이 유효한 파일명 형식이 아닙니다.")
