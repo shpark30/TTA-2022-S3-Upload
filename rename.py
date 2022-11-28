@@ -5,6 +5,8 @@ import shutil
 from tqdm import tqdm
 import re
 import os
+from datetime import datetime
+from collections import defaultdict
 
 from utils import path_join, extract_task_id, validate_name_format
 import local_config as cfg
@@ -54,11 +56,18 @@ class Correct(metaclass=RegistryMetaClass):
     data_info = pd.read_csv(cfg.DATA_INFO_PATH, encoding="cp949")
 
     def __init__(self, file_list: list):
+        assert len(set(file_list)) == len(
+            file_list), "파일 리스트에 중복이 있습니다."
         self.old_file_list = file_list
-        self.new_file_list = {}
+        self.new_file_dict = {}
+
+    def __len__(self):
+        if len(self.new_file_dict) == 0:
+            return len(self.old_file_list)
+        return len(self.new_file_dict)
 
     def execute(self, p=False):
-        if len(self.new_file_list):
+        if len(self.new_file_dict):
             print("이미 execute를 실행했습니다.")
             return
 
@@ -66,7 +75,7 @@ class Correct(metaclass=RegistryMetaClass):
 
         for file_path in self.old_file_list:
             file_name = file_path.split("/")[-1]
-            self.new_file_list[file_path] = self.correct(file_name, p=p)
+            self.new_file_dict[file_path] = self.correct(file_name, p=p)
 
     def rename(self, root, p=False, progress_bar: bool = True):
         if not os.path.exists(root):
@@ -91,15 +100,15 @@ class Correct(metaclass=RegistryMetaClass):
 
     def copy_to(self, root, overwrite=False, progress_bar: bool = True):
         """ 기존 파일의 수정 버전을 root 하위에 옮긴다. """
-        if len(self.new_file_list) == 0:
-            print("new_file_list가 비어있습니다. execute 메서드를 먼저 실행해주시기 바랍니다.")
+        if len(self.new_file_dict) == 0:
+            print("new_file_dict가 비어있습니다. execute 메서드를 먼저 실행해주시기 바랍니다.")
             return
 
         if not os.path.exists(root):
             print(f"{root} 경로가 존재하지 않습니다.")
             return
 
-        file_list = deepcopy(self.new_file_list)
+        file_list = deepcopy(self.new_file_dict)
         print("전체 파일 수:", len(file_list))
         existed_num = 0
         remove_keys = []
@@ -114,7 +123,7 @@ class Correct(metaclass=RegistryMetaClass):
                 del(file_list[key])
 
         print("이름이 이미 수정된 파일 수:", existed_num)
-        print("새로운 파일 수:", len(self.new_file_list) - existed_num)
+        print("새로운 파일 수:", len(self.new_file_dict) - existed_num)
 
         if progress_bar:
             bar = tqdm(file_list.items(),
@@ -147,6 +156,47 @@ class Correct(metaclass=RegistryMetaClass):
             print("변경: " + file_name)
             print()
         return file_path.replace(prev_name, file_name)
+
+    def remove_older_files(self, p=False):
+        """ 동일한 문서 중 날짜가 최신인 파일 외에는 file_list에서 제거 """
+        finder = re.compile(cfg.DATE_FORMAT)
+
+        def _split_by_date(file_name):
+            find = finder.search(file_name)
+            return (file_name[:find.start()], file_name[find.end():]), find.group()
+
+        # 딕셔너리로 접근하는 것이 좋음
+        def _get_datetime(date):
+            year = int("20" + date[:2])
+            month = int(date[2:4])
+            day = int(date[4:6])
+            return datetime(year, month, day)
+
+        _dict = defaultdict(dict)
+        remove_targets = []
+        for old_name, new_name in self.new_file_dict.items():
+            except_date, date = _split_by_date(new_name)
+            _dict[except_date][date] = old_name
+            assert len(_dict[except_date]) <= 2
+
+            if len(_dict[except_date]) == 1:
+                continue
+
+            dates = [(_get_datetime(date), date)
+                     for date in _dict[except_date].keys()]
+            dates.sort()
+            older_date = dates[0][1]
+            older_file_name = _dict[except_date].pop(older_date)
+            remove_targets.append(older_file_name)
+
+            if p:
+                newer_date = dates[1][1]
+                newer_file_name = _dict[except_date][newer_date]
+                print("old 버전:", older_file_name)
+                print("최신 버전:", newer_file_name)
+
+        for older_file_name in remove_targets:
+            del(self.new_file_dict[older_file_name])
 
 
 class AddTaskId(Correct):
@@ -430,7 +480,7 @@ class CorrectDate(Correct):
 
         # remove hh mm ss
         for time_format in cls.time_list:
-            time = cls.__find_date(file_name, time_format)
+            time = cls.find_date(file_name, time_format)
             if time is None:
                 continue
             file_name = file_name.replace(time, "")
@@ -464,7 +514,7 @@ class CorrectDate(Correct):
     @classmethod
     def __edit_date_format(cls, input):
         for date_format, indices in cls.date_dict.items():
-            date = cls.__find_date(input, date_format)  # None or Date
+            date = cls.find_date(input, date_format)  # None or Date
             if date is None:
                 continue
             new_date = "".join([date[i[0]:i[1]] for i in indices])
@@ -482,7 +532,7 @@ class CorrectDate(Correct):
 
     @classmethod
     def __correct_date_range(cls, file_name):
-        date = cls.__find_date(file_name, "22\d{4}")
+        date = cls.find_date(file_name, "22\d{4}")
         if date is None:
             raise Exception(f"{file_name} 에 6자리 유효한 날짜 형식이 없습니다.")
 
@@ -524,7 +574,7 @@ class CorrectDate(Correct):
         return file_name.split("_")[-1].split(".")[0]
 
     @ classmethod
-    def __find_date(cls, date_part, date_format):
+    def find_date(cls, date_part, date_format):
         date_finder = re.compile(date_format)
         date = date_finder.search(date_part)
         if date is None:
@@ -833,6 +883,7 @@ class CorrectDunder(Correct):
     def execute(cls, file_name):
         return file_name.replace("__", "_")
 
+
 # Test
 if __name__ == "__main__":
     root = "C:/Users/seohy/workspace/upload_S3/test-data/사전검사결과"
@@ -841,36 +892,58 @@ if __name__ == "__main__":
         "[1-001-002-CV] 구문정확성사전검사결과_비디오 전환 경계 추론 데이터_2022-09-27 09 11 42.xlsx",
         "[1-001-002-CV] 구문정확성사전검사결과_비디오 전환 경계 추론 데이터_2022-09-27.xlsx",
 
-        "[1-001-002-CV]구문정확성사전검사결과_비디오 전환 경계 추론 데이터_220927.xlsx",
-
-        "[1-001-002]구문정확성사전검사결과_비디오 전환 경계 추론 데이터_20220927.xlsx",
+        # 코드
         "[1-001-002] 구문정확성사전검사결과_비디오 전환 경계 추론 데이터_20220927.xlsx",
+
+        # 띄어쓰기 없을 때
+        "[1-001-002]구문정확성사전검사결과_비디오 전환 경계 추론 데이터_20220927.xlsx",
+        "[1-001-002-CV]구문정확성사전검사결과_비디오 전환 경계 추론 데이터_220927.xlsx",
         "[1-001-002]_구문정확성사전검사결과_비디오 전환 경계 추론 데이터_20220927.xlsx",
 
+        # 대괄호 없을 때
         "1-001-002구문정확성사전검사결과_비디오 전환 경계 추론 데이터_2022-09-27.xlsx",
         "1-001-002_구문정확성사전검사결과_비디오 전환 경계 추론 데이터_2022-09-27.xlsx",
-        "1-001-002구문정확성사전검사결과_비디오 전환 경계 추론 데이터_2022-09-27.xlsx",
 
+        # 대괄호 대신 언더바가 쓰였을 때
         "_1-001-002_구문정확성사전검사결과_비디오 전환 경계 추론 데이터_2022-09-27.xlsx",
         "_1-001-002_ 구문정확성사전검사결과_비디오 전환 경계 추론 데이터_2022-09-27.xlsx",
 
+        # 대괄호 대신 소괄호가 쓰였을 때
         "(1-001-002)구문정확성사전검사결과_비디오 전환 경계 추론 데이터_2022-09-27.xlsx",
         "(1-001-002)_구문정확성사전검사결과_비디오 전환 경계 추론 데이터_2022-09-27.xlsx",
         "(1-001-002) 구문정확성사전검사결과_비디오 전환 경계 추론 데이터_2022-09-27.xlsx",
 
+
+        # 띄어쓰기 두번 쓰였을 때
         "(1-001-002)  형식오류목록_비디오 전환 경계 추론 데이터_2022-09-27.xlsx",
         "(1-001-002)  사전검사형식오류목록_비디오 전환 경계 추론 데이터_2022-09-27.xlsx",
+
+
+        # 과제 아이디 없을 때 & 형식오류목록 순서 & 시간까지 쓰였을 때
         "페르소나 대화 데이터_형식오류목록_2022-08-25 14_07_54.csv",
 
+        # 확장자가 파일명에 들었을 때
         "[2-095-236-EN] 사전검사형식오류목록_지하수 수량·수질 데이터 (이용량)_221020.csv.csv",
 
+        # (숫자) 복사본일 때
         "[2-095-236-EN] 사전검사형식오류목록_지하수 수량·수질 데이터 (이용량)_221020 (1).csv",
 
+        # 동일한 문서가 날짜 버전만 다를 때
         "[2-095-236-EN] 형식오류목록_지하수 수량·수질 데이터 (이용량)_형식오류목록_221020.csv",
+        "[2-095-236-EN] 형식오류목록_지하수 수량·수질 데이터 (이용량)_형식오류목록_220910.csv",
     ]
     file_list = [path_join(root, file) for file in file_list]
     correct = Correct(file_list)
+
+    old_files_len = len(correct)
     correct.execute(p=True)
+    before_remove_len = len(correct)
+
+    correct.remove_older_files(p=True)
+
+    after_remove_len = len(correct)
+    print(old_files_len, before_remove_len, after_remove_len)
+
     # correct.copy_to(cfg.RESULT_DIR_EDIT)
 
     # correct.rename(cfg.RESULT_DIR_EDIT)
