@@ -827,7 +827,13 @@ class CorrectBody(Correct):
             return None
         return find.group()
 
-        # Test
+
+class CorrectDunder(Correct):
+    @ classmethod
+    def execute(cls, file_name):
+        return file_name.replace("__", "_")
+
+# Test
 if __name__ == "__main__":
     root = "C:/Users/seohy/workspace/upload_S3/test-data/사전검사결과"
     file_list = [
