@@ -1,5 +1,5 @@
 import local_config as cfg
-from rename import Correct
+from rename import RegistryMetaClass
 from utils import path_join, find_files_in_dir
 from upload import AwsS3Uploader
 
@@ -16,7 +16,7 @@ def main(
         cfg.RESULT_DIR_ORIGINAL, pattern="^((?!증적용).)*$")
 
     # 파일명 수정 및 New directory로 이동
-    correct = Correct(file_list)
+    correct = RegistryMetaClass(file_list)
     correct.execute()
     correct.remove_older_files(p=True)
     import pdb

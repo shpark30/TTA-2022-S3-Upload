@@ -13,14 +13,14 @@ class AwsS3Uploader():
                  aws_access_key_id,
                  aws_secret_access_key,
                  aws_bucket,
-                 per_task_prefix,
+                 Prefix,
                  Delimiter='/'):
 
         # S3 접근 정보
         self.aws_access_key_id = aws_access_key_id
         self.aws_secret_access_key = aws_secret_access_key
         self.aws_bucket = aws_bucket
-        self.Prefix = per_task_prefix
+        self.Prefix = Prefix
         self.Delimiter = Delimiter
 
         # S3 리소스
