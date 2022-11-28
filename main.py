@@ -18,6 +18,9 @@ def main(
     # 파일명 수정 및 New directory로 이동
     correct = Correct(file_list)
     correct.execute()
+    correct.remove_older_files(p=True)
+    import pdb
+    pdb.set_trace()
     correct.copy_to(cfg.RESULT_DIR_EDIT)
 
     # S3 업로드
