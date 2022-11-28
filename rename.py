@@ -108,11 +108,11 @@ class Correct(metaclass=RegistryMetaClass):
             print(f"{root} 경로가 존재하지 않습니다.")
             return
 
-        file_list = deepcopy(self.new_file_dict)
-        print("전체 파일 수:", len(file_list))
+        new_file_dict = deepcopy(self.new_file_dict)
+        print("전체 파일 수:", len(new_file_dict))
         existed_num = 0
         remove_keys = []
-        for key, new_path in file_list.items():
+        for key, new_path in new_file_dict.items():
             if os.path.exists(path_join(root, new_path)):
                 existed_num += 1
                 if not overwrite:
@@ -120,16 +120,16 @@ class Correct(metaclass=RegistryMetaClass):
 
         if not overwrite:
             for key in remove_keys:
-                del(file_list[key])
+                del(new_file_dict[key])
 
         print("이름이 이미 수정된 파일 수:", existed_num)
         print("새로운 파일 수:", len(self.new_file_dict) - existed_num)
 
         if progress_bar:
-            bar = tqdm(file_list.items(),
-                       total=len(file_list))
+            bar = tqdm(new_file_dict.items(),
+                       total=len(new_file_dict))
         else:
-            bar = file_list.items()
+            bar = new_file_dict.items()
 
         for old_path, new_name in bar:
             new_path = path_join(root, new_name)
@@ -140,7 +140,7 @@ class Correct(metaclass=RegistryMetaClass):
         file_name = file_path.split("\\")[-1]
         prev_name = deepcopy(file_name)
         # if file_path == "페르소나 대화 데이터_형식오류목록_2022-08-25 14_07_54.csv":
-        #     import pdb
+        # import pdb
         # pdb.set_trace()
         for name, sub_class in self.REGISTRY.items():
             file_name = sub_class.execute(file_name)
@@ -158,7 +158,7 @@ class Correct(metaclass=RegistryMetaClass):
         return file_path.replace(prev_name, file_name)
 
     def remove_older_files(self, p=False):
-        """ 동일한 문서 중 날짜가 최신인 파일 외에는 file_list에서 제거 """
+        """ 동일한 문서 중 날짜가 최신인 파일 외에는 new_file_dict에서 제거 """
         finder = re.compile(cfg.DATE_FORMAT)
 
         def _split_by_date(file_name):
@@ -806,7 +806,6 @@ class CorrectRepeatExtension(Correct):
 class CorrectBody(Correct):
     validate_pattern = [
         cfg.ID_FORMAT,
-        cfg.CATEGORY_FORMAT,
         cfg.RESULT_TYPE_FORMAT,
         cfg.DATE_FORMAT,
         cfg.EXTENSION_FORMAT
@@ -888,49 +887,51 @@ class CorrectDunder(Correct):
 if __name__ == "__main__":
     root = "C:/Users/seohy/workspace/upload_S3/test-data/사전검사결과"
     file_list = [
-        # 날짜 형식 테스트
-        "[1-001-002-CV] 구문정확성사전검사결과_비디오 전환 경계 추론 데이터_2022-09-27 09 11 42.xlsx",
-        "[1-001-002-CV] 구문정확성사전검사결과_비디오 전환 경계 추론 데이터_2022-09-27.xlsx",
+        # # 날짜 형식 테스트
+        # "[1-001-002-CV] 구문정확성사전검사결과_비디오 전환 경계 추론 데이터_2022-09-27 09 11 42.xlsx",
+        # "[1-001-002-CV] 구문정확성사전검사결과_비디오 전환 경계 추론 데이터_2022-09-27.xlsx",
 
-        # 코드
-        "[1-001-002] 구문정확성사전검사결과_비디오 전환 경계 추론 데이터_20220927.xlsx",
+        # # 코드
+        # "[1-001-002] 구문정확성사전검사결과_비디오 전환 경계 추론 데이터_20220927.xlsx",
 
-        # 띄어쓰기 없을 때
-        "[1-001-002]구문정확성사전검사결과_비디오 전환 경계 추론 데이터_20220927.xlsx",
-        "[1-001-002-CV]구문정확성사전검사결과_비디오 전환 경계 추론 데이터_220927.xlsx",
-        "[1-001-002]_구문정확성사전검사결과_비디오 전환 경계 추론 데이터_20220927.xlsx",
+        # # 띄어쓰기 없을 때
+        # "[1-001-002]구문정확성사전검사결과_비디오 전환 경계 추론 데이터_20220927.xlsx",
+        # "[1-001-002-CV]구문정확성사전검사결과_비디오 전환 경계 추론 데이터_220927.xlsx",
+        # "[1-001-002]_구문정확성사전검사결과_비디오 전환 경계 추론 데이터_20220927.xlsx",
 
-        # 대괄호 없을 때
-        "1-001-002구문정확성사전검사결과_비디오 전환 경계 추론 데이터_2022-09-27.xlsx",
-        "1-001-002_구문정확성사전검사결과_비디오 전환 경계 추론 데이터_2022-09-27.xlsx",
+        # # 대괄호 없을 때
+        # "1-001-002구문정확성사전검사결과_비디오 전환 경계 추론 데이터_2022-09-27.xlsx",
+        # "1-001-002_구문정확성사전검사결과_비디오 전환 경계 추론 데이터_2022-09-27.xlsx",
 
-        # 대괄호 대신 언더바가 쓰였을 때
-        "_1-001-002_구문정확성사전검사결과_비디오 전환 경계 추론 데이터_2022-09-27.xlsx",
-        "_1-001-002_ 구문정확성사전검사결과_비디오 전환 경계 추론 데이터_2022-09-27.xlsx",
+        # # 대괄호 대신 언더바가 쓰였을 때
+        # "_1-001-002_구문정확성사전검사결과_비디오 전환 경계 추론 데이터_2022-09-27.xlsx",
+        # "_1-001-002_ 구문정확성사전검사결과_비디오 전환 경계 추론 데이터_2022-09-27.xlsx",
 
-        # 대괄호 대신 소괄호가 쓰였을 때
-        "(1-001-002)구문정확성사전검사결과_비디오 전환 경계 추론 데이터_2022-09-27.xlsx",
-        "(1-001-002)_구문정확성사전검사결과_비디오 전환 경계 추론 데이터_2022-09-27.xlsx",
-        "(1-001-002) 구문정확성사전검사결과_비디오 전환 경계 추론 데이터_2022-09-27.xlsx",
-
-
-        # 띄어쓰기 두번 쓰였을 때
-        "(1-001-002)  형식오류목록_비디오 전환 경계 추론 데이터_2022-09-27.xlsx",
-        "(1-001-002)  사전검사형식오류목록_비디오 전환 경계 추론 데이터_2022-09-27.xlsx",
+        # # 대괄호 대신 소괄호가 쓰였을 때
+        # "(1-001-002)구문정확성사전검사결과_비디오 전환 경계 추론 데이터_2022-09-27.xlsx",
+        # "(1-001-002)_구문정확성사전검사결과_비디오 전환 경계 추론 데이터_2022-09-27.xlsx",
+        # "(1-001-002) 구문정확성사전검사결과_비디오 전환 경계 추론 데이터_2022-09-27.xlsx",
 
 
-        # 과제 아이디 없을 때 & 형식오류목록 순서 & 시간까지 쓰였을 때
-        "페르소나 대화 데이터_형식오류목록_2022-08-25 14_07_54.csv",
+        # # 띄어쓰기 두번 쓰였을 때
+        # "(1-001-002)  형식오류목록_비디오 전환 경계 추론 데이터_2022-09-27.xlsx",
+        # "(1-001-002)  사전검사형식오류목록_비디오 전환 경계 추론 데이터_2022-09-27.xlsx",
 
-        # 확장자가 파일명에 들었을 때
-        "[2-095-236-EN] 사전검사형식오류목록_지하수 수량·수질 데이터 (이용량)_221020.csv.csv",
 
-        # (숫자) 복사본일 때
-        "[2-095-236-EN] 사전검사형식오류목록_지하수 수량·수질 데이터 (이용량)_221020 (1).csv",
+        # # 과제 아이디 없을 때 & 형식오류목록 순서 & 시간까지 쓰였을 때
+        # "페르소나 대화 데이터_형식오류목록_2022-08-25 14_07_54.csv",
 
-        # 동일한 문서가 날짜 버전만 다를 때
-        "[2-095-236-EN] 형식오류목록_지하수 수량·수질 데이터 (이용량)_형식오류목록_221020.csv",
-        "[2-095-236-EN] 형식오류목록_지하수 수량·수질 데이터 (이용량)_형식오류목록_220910.csv",
+        # # 확장자가 파일명에 들었을 때
+        # "[2-095-236-EN] 사전검사형식오류목록_지하수 수량·수질 데이터 (이용량)_221020.csv.csv",
+
+        # # (숫자) 복사본일 때
+        # "[2-095-236-EN] 사전검사형식오류목록_지하수 수량·수질 데이터 (이용량)_221020 (1).csv",
+
+        # # 동일한 문서가 날짜 버전만 다를 때
+        # "[2-095-236-EN] 형식오류목록_지하수 수량·수질 데이터 (이용량)_형식오류목록_221020.csv",
+        # "[2-095-236-EN] 형식오류목록_지하수 수량·수질 데이터 (이용량)_형식오류목록_220910.csv",
+
+        "[1-047-119-SA] 통계다양성사전검사결과_IR 실제 환경 안면 검출 및 인식 데이터 (wider)_221005.xlsx",
     ]
     file_list = [path_join(root, file) for file in file_list]
     correct = Correct(file_list)
@@ -944,7 +945,7 @@ if __name__ == "__main__":
     after_remove_len = len(correct)
     print(old_files_len, before_remove_len, after_remove_len)
 
-    # correct.copy_to(cfg.RESULT_DIR_EDIT)
-
-    # correct.rename(cfg.RESULT_DIR_EDIT)
+    # # rename
+    # correct = Correct([])
+    # correct.rename(cfg.RESULT_DIR_EDIT, p=True)
     # correct.rename(new_root)
