@@ -1,7 +1,7 @@
 import re
 
 import local_config as cfg
-from .correct import CorrectInterface
+from . import CorrectInterface
 
 
 class CorrectBody(CorrectInterface):
@@ -9,7 +9,7 @@ class CorrectBody(CorrectInterface):
         cfg.ID_FORMAT,
         cfg.RESULT_TYPE_FORMAT,
         cfg.DATE_FORMAT,
-        cfg.EXTENSION_FORMAT
+        # cfg.EXTENSION_FORMAT
     ]
 
     @ classmethod

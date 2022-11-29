@@ -1,4 +1,4 @@
-from .correct import CorrectInterface
+from . import CorrectInterface
 import re
 
 
@@ -53,6 +53,97 @@ class AddTaskId(CorrectInterface):
         return file_name
 
 
+class CorrectTaskId(CorrectInterface):
+    @classmethod
+    def execute(cls, file_name):
+        for error_format, correct_method in cls.__get_correct_dict().items():
+            error = cls.__find(file_name, error_format)
+            if error is None:
+                continue
+            corrected = correct_method(error)
+            file_name = file_name.replace(error, corrected)
+        return file_name
+
+    @classmethod
+    def __get_correct_dict(cls):
+        UNDERSCORE_BEFORE_CODE = "\d-\d{3}-\d{3}_[A-Z]{2}"
+        SPACE_BEFORE_CODE = "\d-\d{3}-\d{3}\s[A-Z]{2}"
+
+        correct_dict = {
+            UNDERSCORE_BEFORE_CODE: cls.correct_underscore_before_code,
+            SPACE_BEFORE_CODE: cls.correct_space_before_code
+        }
+
+        return correct_dict
+
+    @classmethod
+    def __find(cls, text, pattern):
+        finder = re.compile(pattern)
+        find = finder.search(text)
+        if find is None:
+            return None
+        return find.group()
+
+    @classmethod
+    def correct_underscore_before_code(cls, error):
+        """
+        [] 안에 연결자 _를 모두 -로 바꾼다.
+        ex. [1-002-004_CV] -> [1-002-004-CV]
+        """
+        return error.replace("_", "-")
+
+    @classmethod
+    def correct_space_before_code(cls, error):
+        """
+        [] 안에 연결자 _를 모두 -로 바꾼다.
+        ex. [1-002-004_CV] -> [1-002-004-CV]
+        """
+        return error.replace(" ", "-")
+
+    # """
+    # x-xxx-xxx_AZ -> x-xxx-xxx-AZ
+    # """
+    # AVAILABLE_PATTERN = "\d-\d{3}-\d{3}-[A-Z]{2}"
+
+    # @classmethod
+    # def execute(cls, file_name):
+    #     """
+    #     [1-001-001_CV] 구문정확성사전검사결과... - > [1-001-001-CV] 구문정확성사전검사결과...
+    #     [1-001-001] 구문정확성사전검사결과... - > [1-001-001-CV] 구문정확성사전검사결과...
+    #     """
+    #     validate_pattern = re.compile(cls.AVAILABLE_PATTERN)
+    #     if validate_pattern.search(file_name) is not None:
+    #         return file_name
+
+    #     file_name = cls.__correct_underscore_in_task_id(file_name)
+    #     file_name = cls.__correct_space_in_task_id(file_name)
+    #     return file_name
+
+    # @classmethod
+    # def __correct_underscore_in_task_id(cls, file_name):
+    #     format = "\d-\d{3}-\d{3}_[A-Z]{2}"
+    #     underscore_find_pattern = re.compile(format)
+    #     error = underscore_find_pattern.search(file_name)
+    #     if error is None:
+    #         return file_name
+    #     start, end = error.span()
+    #     old = file_name[start:end]
+    #     new = old.replace("_", "-")
+    #     return file_name.replace(old, new)
+
+    # @classmethod
+    # def __correct_space_in_task_id(cls, file_name):
+    #     format = "\d-\d{3}-\d{3} [A-Z]{2}"
+    #     underscore_find_pattern = re.compile(format)
+    #     error = underscore_find_pattern.search(file_name)
+    #     if error is None:
+    #         return file_name
+    #     start, end = error.span()
+    #     old = file_name[start:end]
+    #     new = old.replace(" ", "-")
+    #     return file_name.replace(old, new)
+
+
 class CorrectIdMaually(CorrectInterface):
     @classmethod
     def execute(cls, file_name):
@@ -64,7 +155,10 @@ class CorrectIdMaually(CorrectInterface):
         """ 예외 케이스 처리 """
         except_dict = {
             "2-019-294": "3-019-294",
-            "2-062-194": "2-063-194"
+            "2-062-194": "2-063-194",
+            "데2-084-222": "2-084-222",
+            "1-007-058_": "1-007-028",
+            "2-055-187": "2-057-187",
         }
 
         for old, new in except_dict.items():
@@ -77,7 +171,7 @@ class AddTaskCode(CorrectInterface):
     """
     x-xxx-xxx -> x-xxx-xxx-AZ
     """
-    CODE_PATTERN = "[A-Z]{2}"
+    CODE_PATTERN = "((?!(\d-\d{3}-\d{3}))\-[A-Z]{2})"
     NO_CODE_PATTERN = "\d-\d{3}-\d{3}"
 
     @classmethod
@@ -121,51 +215,6 @@ class AddTaskCode(CorrectInterface):
         if len(match_series) > 1:
             raise Exception(f"과제 번호({number})가 master table에 여러 개 들어있습니다.")
         return match_series.tolist()[0]
-
-
-class CorrectTaskId(CorrectInterface):
-    """
-    x-xxx-xxx_AZ -> x-xxx-xxx-AZ
-    """
-    AVAILABLE_PATTERN = "\d-\d{3}-\d{3}-[A-Z]{2}"
-
-    @classmethod
-    def execute(cls, file_name):
-        """
-        [1-001-001_CV] 구문정확성사전검사결과... - > [1-001-001-CV] 구문정확성사전검사결과...
-        [1-001-001] 구문정확성사전검사결과... - > [1-001-001-CV] 구문정확성사전검사결과...
-        """
-        validate_pattern = re.compile(cls.AVAILABLE_PATTERN)
-        if validate_pattern.search(file_name) is not None:
-            return file_name
-
-        file_name = cls.__correct_underscore_in_task_id(file_name)
-        file_name = cls.__correct_space_in_task_id(file_name)
-        return file_name
-
-    @classmethod
-    def __correct_underscore_in_task_id(cls, file_name):
-        format = "\d-\d{3}-\d{3}_[A-Z]{2}"
-        underscore_find_pattern = re.compile(format)
-        error = underscore_find_pattern.search(file_name)
-        if error is None:
-            return file_name
-        start, end = error.span()
-        old = file_name[start:end]
-        new = old.replace("_", "-")
-        return file_name.replace(old, new)
-
-    @classmethod
-    def __correct_space_in_task_id(cls, file_name):
-        format = "\d-\d{3}-\d{3} [A-Z]{2}"
-        underscore_find_pattern = re.compile(format)
-        error = underscore_find_pattern.search(file_name)
-        if error is None:
-            return file_name
-        start, end = error.span()
-        old = file_name[start:end]
-        new = old.replace(" ", "-")
-        return file_name.replace(old, new)
 
 
 class CorrectIdBracket(CorrectInterface):

@@ -1,7 +1,7 @@
 import re
 
 import local_config as cfg
-from .correct import CorrectInterface
+from . import CorrectInterface
 
 
 class CorrectDuplication(CorrectInterface):

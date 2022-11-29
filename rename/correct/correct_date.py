@@ -1,7 +1,8 @@
 import re
 import local_config as cfg
 
-from .correct import CorrectInterface
+from . import CorrectInterface
+from utils import extract_task_id
 
 
 class CorrectDate(CorrectInterface):
@@ -10,6 +11,7 @@ class CorrectDate(CorrectInterface):
         "22\d{4}": [(0, 2), (2, 4), (4, 6)],
         "2022\d{4}": [(2, 4), (4, 6), (6, 8)],
         "2022-\d{2}-\d{2}": [(2, 4), (5, 7), (8, 10)],
+        "2022_\d{2}_\d{2}": [(2, 4), (5, 7), (8, 10)],
     }
 
     time_list = [
@@ -132,8 +134,7 @@ class CorrectDate(CorrectInterface):
         date = date_finder.search(date_part)
         if date is None:
             return None
-        start, end = date.span()
-        return date_part[start: end]
+        return date.group()
 
     @ classmethod
     def __validate_date_format(cls, date):

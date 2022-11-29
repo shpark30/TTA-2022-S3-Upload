@@ -1,7 +1,7 @@
 import re
 
 import local_config as cfg
-from .correct import CorrectInterface
+from . import CorrectInterface
 
 
 class CorrectResultType(CorrectInterface):
@@ -51,7 +51,7 @@ class CorrectResultType(CorrectInterface):
 
 class CorrectReportType(CorrectInterface):
     rename_dict = {
-        '이슈리포트': '사전이슈리포트',
+        '] 이슈리포트': '] 사전이슈리포트',
         '사전 이슈리포트': '사전이슈리포트',
     }
 
@@ -73,11 +73,11 @@ class AddReportType(CorrectInterface):
         if "사전이슈리포트" in file_name:
             return file_name
 
-        i = file_name.lindex(" ")+1
+        i = file_name.index(" ")+1
         return file_name[:i] + "사전이슈리포트_" + file_name[i:]
 
 
-class CorrectDelimiter(CorrectInterface):
+class CorrectTypeDelimiter(CorrectInterface):
     """
     결과서 타입이 명확해야 하기 때문에 CorrectResultType 이후에 동작해야 함.
     """

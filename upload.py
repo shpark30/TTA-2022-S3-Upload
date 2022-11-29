@@ -49,6 +49,10 @@ class AwsS3Uploader():
             "취합본": self.__get_path_per_type
         }
 
+        if "이슈리포트" in file_list[0]:
+            print("이슈리포트를 취합본 폴더에 업로드합니다.")
+            del(upload_mode['과제별'])
+
         print("전체 파일 수:", len(file_list))
         for mode, get_method in upload_mode.items():
             print(mode, "업로드")
@@ -91,7 +95,21 @@ class AwsS3Uploader():
     def __get_path_per_task(self, file_name, ver):
         task_number = extract_task_id(file_name)
         per_task_path = self.per_task_paths_dict[task_number]
-        per_task_path = path_join(per_task_path, ver, "검사 결과서")
+
+        report_type = extract_report_type(file_name)
+        if report_type in [
+            f"구문정확성{ver}검사결과",
+            f"통계다양성{ver}검사결과",
+            f"{ver}검사형식오류목록",
+            f"{ver}검사구조오류목록",
+            f"{ver}검사파일오류목록"
+        ]:
+            per_task_path = path_join(per_task_path, ver, "검사 결과서")
+        elif report_type in [
+            f"{ver}검사규칙",
+        ]:
+            per_task_path = path_join(per_task_path, ver, "검사 규칙")
+
         self.__validate_s3_object_exists(per_task_path)
         return path_join(per_task_path, file_name)
 
@@ -105,14 +123,25 @@ class AwsS3Uploader():
         report_type = extract_report_type(file_name)
 
         if report_type in [
-            "구문정확성사전검사결과",
-            "통계다양성사전검사결과",
-            "사전검사형식오류목록",
-            "사전검사구조오류목록",
-            "사전검사파일오류목록"
+            f"구문정확성{ver}검사결과",
+            f"통계다양성{ver}검사결과",
+            f"{ver}검사형식오류목록",
+            f"{ver}검사구조오류목록",
+            f"{ver}검사파일오류목록"
         ]:
             target_folder_name = f"{ver}검사결과서"
-            per_type_path = path_join(root, target_folder_name)
+
+        elif report_type in [
+            f"{ver}이슈리포트",
+        ]:
+            target_folder_name = f"체크리스트({ver})"
+
+        elif report_type in [
+            f"{ver}검사규칙"
+        ]:
+            target_folder_name = f"{ver}검사규칙)"
+
+        per_type_path = path_join(root, target_folder_name)
 
         assert per_type_path is not None
         self.__validate_s3_object_exists(per_type_path)
@@ -172,20 +201,41 @@ class AwsS3Uploader():
 # Test
 if __name__ == "__main__":
     import access_info as info
+    import local_config as cfg
+    from utils import find_files_in_dir
 
-    uploader = AwsS3Uploader(
-        aws_access_key_id=info.TEST_ACCESS_KEY_ID,
-        aws_secret_access_key=info.TEST_SECRET_ACCESS_KEY,
-        aws_bucket=info.TEST_BUCKET_NAME,
-        Prefix=info.TEST_ROOT
-    )
+    mode = "main"
+    # mode = "test"
 
-    root = r"C:/Users/seohy/workspace/upload_S3/test-data/사전검사결과_new"
-    from_files = os.listdir(root)
-    # uploader.upload(path_join(root, from_files[0]))
-    uploader.upload(
-        "W:/2022 TTA/2022 사전 검사 결과서/[1-014-046-NL] 구문정확성사전검사결과_공감형 대화 데이터_220822.xlsx",
-        "사전")
+    if mode == "test":
+        uploader = AwsS3Uploader(
+            aws_access_key_id=info.TEST_ACCESS_KEY_ID,
+            aws_secret_access_key=info.TEST_SECRET_ACCESS_KEY,
+            aws_bucket=info.TEST_BUCKET_NAME,
+            Prefix=path_join(info.TEST_ROOT, "과제별/")
+        )
+
+        # root = r"C:/Users/seohy/workspace/upload_S3/test-data/사전검사결과_new"
+        from_files = find_files_in_dir(cfg.REPORT_DIR_EDIT, )
+        # uploader.upload(path_join(root, from_files[0]))
+        uploader.upload(
+            from_files,
+            "사전")
+
+    if mode == "main":
+        uploader = AwsS3Uploader(
+            aws_access_key_id=info.ACCESS_KEY_ID,
+            aws_secret_access_key=info.SECRET_ACCESS_KEY,
+            aws_bucket=info.BUCKET_NAME,
+            Prefix=path_join(info.ROOT, "과제별/")
+        )
+
+        # root = r"C:/Users/seohy/workspace/upload_S3/test-data/사전검사결과_new"
+        from_files = find_files_in_dir(cfg.REPORT_DIR_EDIT, pattern="\.docx$")
+        # uploader.upload(path_join(root, from_files[0]))
+        uploader.upload(
+            from_files,
+            "사전")
 
 
 # class TargetPathParser():

@@ -29,11 +29,11 @@ def find_files_in_dir(root, pattern=None):
         if os.path.isdir(path):
             # print(path)
             result.extend(find_files_in_dir(path, pattern))
-        if path.split(".")[-1] in ["csv", "xlsx"]:
-            if reg_pattern and reg_pattern.search(path) is None:
-                continue
-            result.append(path)
             continue
+
+        if reg_pattern and reg_pattern.search(path) is None:
+            continue
+        result.append(path)
     return result
 
 
