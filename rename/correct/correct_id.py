@@ -2,6 +2,29 @@ from . import CorrectInterface
 import re
 
 
+class CorrectIdDigits(CorrectInterface):
+    @classmethod
+    def execute(cls, file_name):
+        file_name = cls.__correct_digits(file_name)
+        return file_name
+
+    @classmethod
+    def __correct_digits(cls, file_name) -> bool:
+        """
+        2-49-175 -> 2-049-175
+        """
+        format = "\d-\d{2}-\d{3}"
+        finder = re.compile(format)
+        error = finder.search(file_name)
+        if error is None:
+            return file_name
+        old = error.group()
+        new = old.split("-")  # old[:2] + "0" + old[2:]
+        new[1] = "0" + new[1]
+        new = "-".join(new)
+        return file_name.replace(old, new)
+
+
 class AddTaskId(CorrectInterface):
     """
     페르소나 대화 데이터_형식오류목록_2022-08-25
@@ -9,7 +32,6 @@ class AddTaskId(CorrectInterface):
     """
     @classmethod
     def execute(cls, file_name):
-        file_name = cls.__correct_task_id(file_name)
         if cls.__has_task_id(file_name):
             return file_name
         file_name = cls.__add_task_id(file_name)
@@ -21,21 +43,6 @@ class AddTaskId(CorrectInterface):
         finder = re.compile(format)
         check = finder.search(file_name)
         return check is not None
-
-    @classmethod
-    def __correct_task_id(cls, file_name) -> bool:
-        """
-        2-49-175 -> 2-049-175
-        """
-        format = "\d-\d{2}-\d{3}"
-        finder = re.compile(format)
-        check = finder.search(file_name)
-        if check is None:
-            return file_name
-        s, e = check.span()
-        old = file_name[s:e]
-        new = old[:2] + "0" + old[2:]
-        return file_name.replace(old, new)
 
     @classmethod
     def __add_task_id(cls, file_name):
@@ -53,7 +60,7 @@ class AddTaskId(CorrectInterface):
         return file_name
 
 
-class CorrectTaskId(CorrectInterface):
+class CorrectDelimiter(CorrectInterface):
     @classmethod
     def execute(cls, file_name):
         for error_format, correct_method in cls.__get_correct_dict().items():
@@ -227,14 +234,13 @@ class CorrectIdBracket(CorrectInterface):
 
     -> x-xxx-xxx
     """
-    AVAILABLE_PATTERN = "\[\d-\d{3}-\d{3}-[A-Z]{2}\] "
+    AVAILABLE_PATTERN = "^\[\d-\d{3}-\d{3}-[A-Z]{2}\] "
 
     @classmethod
     def execute(cls, file_name):
         validate_pattern = re.compile(cls.AVAILABLE_PATTERN)
         if validate_pattern.search(file_name) is not None:
             return file_name
-
         start, end = cls.__extract_task_id_range(file_name)
         # left bracket
         if start == 0:
@@ -242,6 +248,9 @@ class CorrectIdBracket(CorrectInterface):
             end += 1
         elif start == 1:
             file_name = "[" + file_name[1:]
+        elif file_name[:2] == " [":
+            file_name = "[" + file_name[2:]
+            end -= 1
         else:  # start > 2:
             raise Exception(f"task_id 두번째 글자부터 시작합니다. {file_name}")
 
@@ -249,8 +258,9 @@ class CorrectIdBracket(CorrectInterface):
         if file_name[end:end+2] == ")_":
             file_name = file_name[:end] + "]" + file_name[end+2:]
         elif file_name[end:end+2] == "]_":  # "_" : end+1
-            print(file_name)
             file_name = file_name[:end+1] + file_name[end+2:]
+        elif file_name[end:end+2] == " _":  # "_" : end+1
+            file_name = file_name[:end] + "]" + file_name[end+2:]
         elif file_name[end] in ["_", ")"]:
             file_name = file_name[:end] + "]" + file_name[end+1:]
         elif file_name[end] == " ":

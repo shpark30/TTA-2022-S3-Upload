@@ -1,7 +1,7 @@
 from utils import path_join
 
 from rename.correct import Correct
-from rename.correct.correct_id import (AddTaskId, CorrectIdMaually,
+from rename.correct.correct_id import (CorrectIdDigits, AddTaskId, CorrectIdMaually,
                                        AddTaskCode, CorrectTaskId, CorrectIdBracket)
 from rename.correct.correct_type import CorrectResultType, CorrectTypeDelimiter
 from rename.correct.correct_body import CorrectBody
@@ -18,6 +18,7 @@ def correct_register(file_list):
         CorrectRepeatExtension,
 
         # correct id
+        CorrectIdDigits,
         AddTaskId,
         CorrectIdMaually,
         CorrectTaskId,
@@ -40,7 +41,7 @@ def correct_register(file_list):
         CorrectSpace,
         CorrectSequence,
 
-        CorrectDunder,
+        CorrectDunder,  # CorrectBody에서 __ 생길 수 있어서 마지막에 해야 함
     ]
 
     for sub_class in correct_sub_classes:

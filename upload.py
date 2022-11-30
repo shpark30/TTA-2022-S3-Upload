@@ -5,7 +5,8 @@ import botocore
 from tqdm import tqdm
 
 import access_info as info
-from utils import path_join, extract_task_id, validate_name_format, extract_report_type
+from utils import (path_join, extract_task_id, validate_name_format,
+                   validate_rule_format, extract_report_type, is_third_party_outsourced)
 
 
 class AwsS3Uploader():
@@ -38,7 +39,7 @@ class AwsS3Uploader():
         # S3 이관 디렉토리
         self.per_task_paths_dict = self.__get_task_directories(
             self.aws_bucket,
-            self.Prefix,
+            path_join(self.Prefix, "과제별/"),
             self.Delimiter
         )
 
@@ -67,7 +68,14 @@ class AwsS3Uploader():
             # validate
             self.__validate_file_exist_in_local(file_path)
             file_name = file_path.split("/")[-1]
-            validate_name_format(file_name)
+            extension = file_name.split(".")[-1]
+
+            if extension in ['csv', 'xlsx', 'docx']:
+                validate_name_format(file_name)
+            elif extension == 'json':
+                validate_rule_format(file_name)
+            else:
+                raise Exception
 
             # path setting
             to_path = get_method(file_name, ver)
@@ -114,9 +122,9 @@ class AwsS3Uploader():
         return path_join(per_task_path, file_name)
 
     def __get_path_per_type(self, file_name, ver):
-        root = path_join(info.ROOT, "취합본")
+        root = path_join(self.Prefix, "취합본")
 
-        if self.__is_third_party_outsourced(file_name):
+        if is_third_party_outsourced(file_name):
             root = path_join(root, "기타", "제3자검증")
 
         per_type_path = None
@@ -139,7 +147,7 @@ class AwsS3Uploader():
         elif report_type in [
             f"{ver}검사규칙"
         ]:
-            target_folder_name = f"{ver}검사규칙)"
+            target_folder_name = f"{ver}검사규칙"
 
         per_type_path = path_join(root, target_folder_name)
 
@@ -147,21 +155,6 @@ class AwsS3Uploader():
         self.__validate_s3_object_exists(per_type_path)
         per_type_path = path_join(per_type_path, file_name)
         return per_type_path
-
-    def __is_third_party_outsourced(self, file_name):
-        third_party_outsource = {
-            "1-008-030": True,
-            "2-005-126": True,
-            "2-007-128": True,
-            "2-114-255": True,
-            "2-073-204": True,
-            "2-046-171": True,
-            "2-046-172": True,
-            "2-056-186": True,
-            "3-022-297": True
-        }
-        task_id = extract_task_id(file_name)
-        return third_party_outsource.get(task_id, False)
 
     def __get_task_directories(self,
                                aws_bucket,
@@ -212,7 +205,7 @@ if __name__ == "__main__":
             aws_access_key_id=info.TEST_ACCESS_KEY_ID,
             aws_secret_access_key=info.TEST_SECRET_ACCESS_KEY,
             aws_bucket=info.TEST_BUCKET_NAME,
-            Prefix=path_join(info.TEST_ROOT, "과제별/")
+            Prefix=info.TEST_ROOT
         )
 
         # root = r"C:/Users/seohy/workspace/upload_S3/test-data/사전검사결과_new"
@@ -227,7 +220,7 @@ if __name__ == "__main__":
             aws_access_key_id=info.ACCESS_KEY_ID,
             aws_secret_access_key=info.SECRET_ACCESS_KEY,
             aws_bucket=info.BUCKET_NAME,
-            Prefix=path_join(info.ROOT, "과제별/")
+            Prefix=info.ROOT
         )
 
         # root = r"C:/Users/seohy/workspace/upload_S3/test-data/사전검사결과_new"

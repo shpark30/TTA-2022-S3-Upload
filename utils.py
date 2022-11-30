@@ -37,15 +37,14 @@ def find_files_in_dir(root, pattern=None):
     return result
 
 
-def extract_task_id(input: str):
+def extract_task_id(text: str):
     id_format = "\d-\d{3}-\d{3}"
     finder = re.compile(id_format)
-    try:
-        start, end = finder.search(input).span()
-    except AttributeError as e:
+    id = finder.search(text)
+    if id is None:
         raise AttributeError(
-            f"\"{input}\"에 유효한 과제 번호[x-xxx-xxx]가 포함되지 않았습니다.")
-    return input[start:end]
+            f"\"{text}\"에 유효한 과제 번호[x-xxx-xxx]가 포함되지 않았습니다.")
+    return id.group()
 
 
 def extract_report_type(file_name):
@@ -64,6 +63,33 @@ def validate_name_format(file_name):
     validator = re.compile(cfg.FILE_NAME_FORMAT)
     if validator.match(file_name) is None:
         raise ValueError(f"{file_name}이 유효한 파일명 형식이 아닙니다.")
+
+
+def validate_rule_format(file_name):
+    # Type
+    if not isinstance(file_name, str):
+        raise TypeError(f"{file_name}이 유효한 타입(str)이 아닙니다.")
+
+    # Name Format
+    validator = re.compile(cfg.RULE_NAME_FORMAT)
+    if validator.match(file_name) is None:
+        raise ValueError(f"{file_name}이 유효한 파일명 형식이 아닙니다.")
+
+
+def is_third_party_outsourced(file_name):
+    third_party_outsource = {
+        "1-008-030": True,
+        "2-005-126": True,
+        "2-007-128": True,
+        "2-114-255": True,
+        "2-073-204": True,
+        "2-046-171": True,
+        "2-046-172": True,
+        "2-056-186": True,
+        "3-022-297": True
+    }
+    task_id = extract_task_id(file_name)
+    return third_party_outsource.get(task_id, False)
 
 
 if __name__ == "__main__":

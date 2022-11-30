@@ -2,7 +2,7 @@ from utils import path_join, find_files_in_dir
 import local_config as cfg
 
 from rename.correct import Correct
-from rename.correct.correct_id import (AddTaskId, CorrectIdMaually,
+from rename.correct.correct_id import (CorrectIdDigits, AddTaskId, CorrectIdMaually,
                                        AddTaskCode, CorrectTaskId, CorrectIdBracket)
 from rename.correct.correct_type import CorrectReportType, AddReportType, CorrectTypeDelimiter
 from rename.correct.correct_body import CorrectBody
@@ -17,6 +17,7 @@ correct_sub_classes = [
     CorrectRepeatExtension,
 
     # correct id
+    CorrectIdDigits,
     AddTaskId,
     CorrectTaskId,
     CorrectIdMaually,

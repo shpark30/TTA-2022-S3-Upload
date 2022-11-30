@@ -62,15 +62,14 @@ class CorrectSpace(CorrectInterface):
 
     @ classmethod
     def __correct_zero_space(cls, file_name):
-        format = "\](구문|통계|사전)"
+        format = f"^\[{cfg.ID_FORMAT}-{cfg.CATEGORY_FORMAT}\]\S"
         finder = re.compile(format)
         error = finder.search(file_name)
         if error is None:
             return file_name
 
-        s, e = error.span()
-        error_text = file_name[s: e]
-        edit = error_text[: 1] + " " + error_text[1:]
+        error_text = error.group()
+        edit = error_text[:-1] + " " + error_text[-1:]
         return file_name.replace(error_text, edit)
 
     @ classmethod

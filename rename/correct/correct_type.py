@@ -53,6 +53,7 @@ class CorrectReportType(CorrectInterface):
     rename_dict = {
         '] 이슈리포트': '] 사전이슈리포트',
         '사전 이슈리포트': '사전이슈리포트',
+        '사전 이슈 리포트': '사전이슈리포트',
     }
 
     @ classmethod
