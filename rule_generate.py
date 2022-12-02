@@ -43,3 +43,10 @@ diag_datasets['group_id'] = diag_datasets['group_nm'].apply(
     except_extract_task_id)
 diag_datasets['task_id'] = diag_datasets['dgnss_nm'].apply(
     except_extract_task_id)
+
+# group_id와 task_id 일치 여부 확인
+according_cond = diag_datasets.loc[:,
+                                   'task_id'] != diag_datasets.loc[:, 'group_id']
+if according_cond.value_counts()[True] > 0:
+    display(diag_datasets[according_cond])
+    raise Exception("group_id와 task_id가 일치하지 않는 과제가 있습니다.")
