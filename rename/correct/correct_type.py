@@ -25,7 +25,7 @@ class CorrectResultType(CorrectInterface):
     }
 
     @ classmethod
-    def execute(cls, file_name):
+    def execute(cls, file_name, *args, **kwargs):
         file_name = cls.__apply_rename_dict(file_name)
         file_name = cls.__apply_reg_dict(file_name)
         return file_name
@@ -57,7 +57,7 @@ class CorrectReportType(CorrectInterface):
     }
 
     @ classmethod
-    def execute(cls, file_name):
+    def execute(cls, file_name, *args, **kwargs):
         file_name = cls.__apply_rename_dict(file_name)
         return file_name
 
@@ -70,7 +70,7 @@ class CorrectReportType(CorrectInterface):
 
 class AddReportType(CorrectInterface):
     @ classmethod
-    def execute(cls, file_name):
+    def execute(cls, file_name, *args, **kwargs):
         if "사전이슈리포트" in file_name:
             return file_name
 
@@ -84,7 +84,7 @@ class CorrectTypeDelimiter(CorrectInterface):
     """
 
     @ classmethod
-    def execute(cls, file_name):
+    def execute(cls, file_name, *args, **kwargs):
         file_name = cls.__around_result_type(file_name)
         return file_name
 

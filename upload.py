@@ -199,6 +199,7 @@ if __name__ == "__main__":
 
     mode = "main"
     # mode = "test"
+    ver = "사전"
 
     if mode == "test":
         uploader = AwsS3Uploader(
@@ -209,11 +210,11 @@ if __name__ == "__main__":
         )
 
         # root = r"C:/Users/seohy/workspace/upload_S3/test-data/사전검사결과_new"
-        from_files = find_files_in_dir(cfg.REPORT_DIR_EDIT, )
+        from_files = find_files_in_dir(cfg.REPORT_DIR_EDIT.format(ver), )
         # uploader.upload(path_join(root, from_files[0]))
         uploader.upload(
             from_files,
-            "사전")
+            ver)
 
     if mode == "main":
         uploader = AwsS3Uploader(
@@ -224,11 +225,12 @@ if __name__ == "__main__":
         )
 
         # root = r"C:/Users/seohy/workspace/upload_S3/test-data/사전검사결과_new"
-        from_files = find_files_in_dir(cfg.REPORT_DIR_EDIT, pattern="\.docx$")
+        from_files = find_files_in_dir(
+            cfg.REPORT_DIR_EDIT.format(ver), pattern="\.docx$")
         # uploader.upload(path_join(root, from_files[0]))
         uploader.upload(
             from_files,
-            "사전")
+            ver)
 
 
 # class TargetPathParser():

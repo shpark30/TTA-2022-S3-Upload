@@ -1,4 +1,6 @@
-from utils import path_join, find_files_in_dir
+import pandas as pd
+
+from utils import find_files_in_dir
 import local_config as cfg
 
 from rename.correct import Correct
@@ -11,7 +13,6 @@ from rename.correct.correct_etc import (CorrectDuplication, CorrectSequence,
                                         CorrectSpace, CorrectRepeatExtension, CorrectDunder)
 
 # 메타클래스 정의(클래스를 생성하는 클래스)
-
 correct_sub_classes = [
     CorrectDuplication,
     CorrectRepeatExtension,
@@ -100,12 +101,16 @@ if __name__ == "__main__":
     # print(old_files_len, before_remove_len, after_remove_len)
 
     # rename
-    file_list = find_files_in_dir(cfg.REPORT_DIR_ORIGINAL, pattern='docx$')
+    ver = "사전"
+    date = "11.23"
+    file_list = find_files_in_dir(
+        cfg.REPORT_DIR_ORIGINAL.format(ver, date), pattern='docx$')
     import os
 
-    print(len(os.listdir(cfg.REPORT_DIR_ORIGINAL)))
+    print(len(os.listdir(cfg.REPORT_DIR_ORIGINAL.format(ver, date))))
     print(len(file_list))
-    correct = Correct(file_list)
+    data_info = pd.read_csv(cfg.DATA_INFO_PATH.format(ver), encoding="cp949")
+    correct = Correct(file_list, data_info)
     correct.execute(p=True)
     correct.remove_older_files()
     correct.copy_to(cfg.REPORT_DIR_EDIT)

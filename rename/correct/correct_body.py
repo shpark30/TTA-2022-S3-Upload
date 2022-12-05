@@ -13,7 +13,7 @@ class CorrectBody(CorrectInterface):
     ]
 
     @ classmethod
-    def execute(cls, file_name):
+    def execute(cls, file_name, *args, **kwargs):
         old_body = cls.__extract_body(file_name)
         new_body = cls.__clean_duplicates(old_body)
         if old_body != new_body:

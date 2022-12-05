@@ -25,11 +25,13 @@ class CorrectDate(CorrectInterface):
     }
 
     @classmethod
-    def execute(cls, file_name):
+    def execute(cls, file_name, data_info):
         """
         yyyy-mm-dd -> yymmdd
         ^*hh mm ss$ -> ^*yymmdd$
         """
+        cls.data_info = data_info
+
         # date formatting
         file_name = cls.__edit_date_format(file_name)
 

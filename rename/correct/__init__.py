@@ -12,8 +12,6 @@ from utils import path_join, validate_name_format
 
 
 class CorrectInterface:
-    data_info = pd.read_csv(cfg.DATA_INFO_PATH, encoding="cp949")
-
     def execute(self, *args, **kwargs):
         raise NotImplementedError
 
@@ -124,14 +122,14 @@ class Correct(CorrectInterface):
             if not os.path.exists(new_path):
                 shutil.copy(old_path, new_path)
 
-    def correct(self, file_path: str, p=True) -> str:
+    def correct(self, file_path: str, data_info: pd.DataFrame, p=True) -> str:
         file_name = file_path.split("\\")[-1]
         prev_name = deepcopy(file_name)
         # if file_path == "페르소나 대화 데이터_형식오류목록_2022-08-25 14_07_54.csv":
         # import pdb
         # pdb.set_trace()
         for name, sub_class in self.REGISTRY.items():
-            file_name = sub_class.execute(file_name)
+            file_name = sub_class.execute(file_name, data_info)
         try:
             validate_name_format(file_name)
         except Exception as e:

@@ -4,7 +4,7 @@ import re
 
 class CorrectIdDigits(CorrectInterface):
     @classmethod
-    def execute(cls, file_name):
+    def execute(cls, file_name, *args, **kwargs):
         file_name = cls.__correct_digits(file_name)
         return file_name
 
@@ -31,7 +31,8 @@ class AddTaskId(CorrectInterface):
     -> 아이디 추가
     """
     @classmethod
-    def execute(cls, file_name):
+    def execute(cls, file_name, data_info, *args, **kwargs):
+        cls.data_info = data_info
         if cls.__has_task_id(file_name):
             return file_name
         file_name = cls.__add_task_id(file_name)
@@ -62,7 +63,7 @@ class AddTaskId(CorrectInterface):
 
 class CorrectDelimiter(CorrectInterface):
     @classmethod
-    def execute(cls, file_name):
+    def execute(cls, file_name, *args, **kwargs):
         for error_format, correct_method in cls.__get_correct_dict().items():
             error = cls.__find(file_name, error_format)
             if error is None:
@@ -153,7 +154,7 @@ class CorrectDelimiter(CorrectInterface):
 
 class CorrectIdMaually(CorrectInterface):
     @classmethod
-    def execute(cls, file_name):
+    def execute(cls, file_name, *args, **kwargs):
         file_name = cls.__except_correct(file_name)
         return file_name
 
@@ -182,7 +183,7 @@ class AddTaskCode(CorrectInterface):
     NO_CODE_PATTERN = "\d-\d{3}-\d{3}"
 
     @classmethod
-    def execute(cls, file_name):
+    def execute(cls, file_name, *args, **kwargs):
         """
         _1-001-001_ 구문정확성사전검사결과...
         - > _1-001-001-CV_ 구문정확성사전검사결과...
@@ -237,7 +238,7 @@ class CorrectIdBracket(CorrectInterface):
     AVAILABLE_PATTERN = "^\[\d-\d{3}-\d{3}-[A-Z]{2}\] "
 
     @classmethod
-    def execute(cls, file_name):
+    def execute(cls, file_name, *args, **kwargs):
         validate_pattern = re.compile(cls.AVAILABLE_PATTERN)
         if validate_pattern.search(file_name) is not None:
             return file_name

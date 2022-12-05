@@ -6,7 +6,7 @@ from . import CorrectInterface
 
 class CorrectDuplication(CorrectInterface):
     @classmethod
-    def execute(cls, file_name):
+    def execute(cls, file_name, *args, **kwargs):
         finder = re.compile(f"\(\d\)\.{cfg.EXTENSION_FORMAT}")
         find = finder.search(file_name)
         if find is None:
@@ -24,7 +24,7 @@ class CorrectSequence(CorrectInterface):
 
     """
     @ classmethod
-    def execute(cls, file_name):
+    def execute(cls, file_name, *args, **kwargs):
         file_name = cls.__change_result_type_order(file_name)
         return file_name
 
@@ -54,7 +54,7 @@ class CorrectSequence(CorrectInterface):
 class CorrectSpace(CorrectInterface):
 
     @ classmethod
-    def execute(cls, file_name):
+    def execute(cls, file_name, *args, **kwargs):
         file_name = cls.__correct_zero_space(file_name)
         file_name = cls.__correct_many_space(file_name)
         file_name = cls.__correct_space_dot(file_name)
@@ -99,7 +99,7 @@ class CorrectSpace(CorrectInterface):
 
 class CorrectRepeatExtension(CorrectInterface):
     @ classmethod
-    def execute(cls, file_name):
+    def execute(cls, file_name, *args, **kwargs):
         file_name = cls.__remove_duplicated_extension(file_name)
         return file_name
 
@@ -124,5 +124,5 @@ class CorrectRepeatExtension(CorrectInterface):
 
 class CorrectDunder(CorrectInterface):
     @ classmethod
-    def execute(cls, file_name):
+    def execute(cls, file_name, *args, **kwargs):
         return file_name.replace("__", "_")

@@ -7,6 +7,7 @@ from upload import AwsS3Uploader
 
 def main(
     ver,
+    date,
     aws_access_key_id,
     aws_secret_access_key,
     aws_bucket,
@@ -14,13 +15,13 @@ def main(
 ):
     # 수정할 파일명 찾기
     file_list = find_files_in_dir(
-        cfg.RESULT_DIR_ORIGINAL, pattern="^((?!증적용).)*\.(csv|xlsx)$")
+        cfg.RESULT_DIR_ORIGINAL.format(ver, date), pattern="^((?!증적용).)*\.(csv|xlsx)$")
 
     # 파일명 수정 및 New directory로 이동
     correct = correct_register(file_list)
     correct.execute()
     correct.remove_older_files(p=True)
-    correct.copy_to(cfg.RESULT_DIR_EDIT)
+    correct.copy_to(cfg.RESULT_DIR_EDIT.format(ver))
 
     # S3 업로드
     uploader = AwsS3Uploader(
@@ -29,19 +30,21 @@ def main(
         aws_bucket=aws_bucket,
         Prefix=per_task_prefix
     )
-    upload_list = find_files_in_dir(cfg.RESULT_DIR_EDIT)
+    upload_list = find_files_in_dir(cfg.RESULT_DIR_EDIT.format(ver))
     uploader.upload(upload_list, ver)
 
 
 if __name__ == "__main__":
     import access_info as info
     # main(ver="사전",
+    #      date="11.23",
     #      aws_access_key_id=info.TEST_ACCESS_KEY_ID,
     #      aws_secret_access_key=info.TEST_SECRET_ACCESS_KEY,
     #      aws_bucket=info.TEST_BUCKET_NAME,
     #      per_task_prefix=path_join(info.ROOT, "과제별/"))
 
     main(ver="사전",
+         date="11.23",
          aws_access_key_id=info.ACCESS_KEY_ID,
          aws_secret_access_key=info.SECRET_ACCESS_KEY,
          aws_bucket=info.BUCKET_NAME,

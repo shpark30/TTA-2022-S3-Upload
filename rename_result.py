@@ -1,3 +1,6 @@
+import pandas as pd
+
+import local_config as cfg
 from utils import path_join
 
 from rename.correct import Correct
@@ -122,6 +125,7 @@ if __name__ == "__main__":
 
     ]
     file_list = [path_join(root, file) for file in file_list]
+    data_info = pd.read_csv(cfg.DATA_INFO_PATH.format(ver), encoding="cp949")
     correct = correct_register(file_list)
 
     old_files_len = len(correct)
