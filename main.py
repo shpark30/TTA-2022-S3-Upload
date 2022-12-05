@@ -52,12 +52,12 @@ if __name__ == "__main__":
         aws_access_key_id = info.ACCESS_KEY_ID,
         aws_secret_access_key = info.SECRET_ACCESS_KEY,
         aws_bucket = info.BUCKET_NAME,
-        per_task_prefix = info.ROOT
+        Prefix = info.ROOT
     else:
         aws_access_key_id = info.TEST_ACCESS_KEY_ID,
         aws_secret_access_key = info.TEST_SECRET_ACCESS_KEY,
         aws_bucket = info.TEST_BUCKET_NAME,
-        per_task_prefix = info.TEST_ROOT
+        Prefix = info.TEST_ROOT
 
     # 사전 / 최종
     while 1:
@@ -84,7 +84,7 @@ if __name__ == "__main__":
         cfg.RESULT_DIR_EDIT.format(ver),
         cfg.REPORT_DIR_ORIGINAL.format(ver, date),
         cfg.REPORT_DIR_EDIT.format(ver),
-        cfg.RULE_DIR_EDIT.format(ver),
+        cfg.RULE_DIR_EDIT.format(ver, date),
     ]:
         if not os.path.exists(p):
             raise Exception(f"{p} 경로가 존재하지 않습니다.")
@@ -98,10 +98,10 @@ if __name__ == "__main__":
         raise Exception(
             f"{cfg.DATA_INFO_PATH.format(ver)}파일에 {date} 컬럼이 없습니다.")
 
-        # Task 수행
-    main(ver=ver,
-         date=date,
-         aws_access_key_id=info.ACCESS_KEY_ID,
-         aws_secret_access_key=info.SECRET_ACCESS_KEY,
-         aws_bucket=info.BUCKET_NAME,
-         per_task_prefix=info.ROOT)
+    # # Task 수행
+    # main(ver=ver,
+    #      date=date,
+    #      aws_access_key_id=aws_access_key_id,
+    #      aws_secret_access_key=aws_secret_access_key,
+    #      aws_bucket=aws_bucket,
+    #      Prefix=Prefix)

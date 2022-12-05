@@ -5,7 +5,7 @@ import local_config as cfg
 
 from rename.correct import Correct
 from rename.correct.correct_id import (CorrectIdDigits, AddTaskId, CorrectIdMaually,
-                                       AddTaskCode, CorrectTaskId, CorrectIdBracket)
+                                       AddTaskCode, CorrectIdBracket)
 from rename.correct.correct_type import CorrectReportType, AddReportType, CorrectTypeDelimiter
 from rename.correct.correct_body import CorrectBody
 from rename.correct.correct_date import CorrectDate
@@ -20,7 +20,7 @@ correct_sub_classes = [
     # correct id
     CorrectIdDigits,
     AddTaskId,
-    CorrectTaskId,
+    # CorrectTaskId,
     CorrectIdMaually,
     # CorrectIdDelimiter,
     AddTaskCode,

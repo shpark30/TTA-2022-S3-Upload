@@ -5,7 +5,7 @@ from utils import path_join
 
 from rename.correct import Correct
 from rename.correct.correct_id import (CorrectIdDigits, AddTaskId, CorrectIdMaually,
-                                       AddTaskCode, CorrectTaskId, CorrectIdBracket)
+                                       AddTaskCode, CorrectIdBracket)
 from rename.correct.correct_type import CorrectResultType, CorrectTypeDelimiter
 from rename.correct.correct_body import CorrectBody
 from rename.correct.correct_date import CorrectDate
@@ -24,7 +24,7 @@ def correct_register(file_list):
         CorrectIdDigits,
         AddTaskId,
         CorrectIdMaually,
-        CorrectTaskId,
+        # CorrectTaskId,
         # CorrectIdDelimiter,
         AddTaskCode,
 
