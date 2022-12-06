@@ -191,7 +191,10 @@ class Correct(CorrectInterface):
 
     def __validate_date(self, date):
         if len(self.data_info.columns) == 5:
+            print("직전 이관이 없어 비교 검증 생략")
             return
+
+        print("직전 이관과 비교 검증 시작")
 
         def _validate(text):
             validator = re.compile(cfg.MMDD)
@@ -214,3 +217,4 @@ class Correct(CorrectInterface):
 
         assert set(todo_tasks) == set(map(extract_task_id, self.new_file_dict.values(
         ))), f"새로 이관할 파일과 data_info.csv 상 새로 확인 완료된 파일이 다릅니다."
+        print("검증 완료")
