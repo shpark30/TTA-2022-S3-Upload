@@ -183,7 +183,7 @@ class AddTaskCode(CorrectInterface):
     NO_CODE_PATTERN = "\d-\d{3}-\d{3}"
 
     @classmethod
-    def execute(cls, file_name, *args, **kwargs):
+    def execute(cls, file_name, data_info):
         """
         _1-001-001_ 구문정확성사전검사결과...
         - > _1-001-001-CV_ 구문정확성사전검사결과...
@@ -192,6 +192,7 @@ class AddTaskCode(CorrectInterface):
         [1-001-001] 구문정확성사전검사결과...
         - > [1-001-001-CV] 구문정확성사전검사결과...
         """
+        cls.data_info = data_info
         validate_pattern = re.compile(cls.CODE_PATTERN)
         if validate_pattern.search(file_name) is not None:
             return file_name

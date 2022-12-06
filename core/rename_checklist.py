@@ -13,40 +13,43 @@ from core.correct.correct_etc import (CorrectDuplication, CorrectSequence,
                                       CorrectSpace, CorrectRepeatExtension, CorrectDunder)
 
 # 메타클래스 정의(클래스를 생성하는 클래스)
-correct_sub_classes = [
-    CorrectDuplication,
-    CorrectRepeatExtension,
 
-    # correct id
-    CorrectIdDigits,
-    AddTaskId,
-    # CorrectTaskId,
-    CorrectIdMaually,
-    # CorrectIdDelimiter,
-    AddTaskCode,
-    CorrectIdBracket,
 
-    # correct date
-    CorrectDate,
+def correct_register(file_list):
+    correct_sub_classes = [
+        CorrectDuplication,
+        CorrectRepeatExtension,
 
-    # correct type
-    CorrectReportType,
-    AddReportType,
-    CorrectTypeDelimiter,
+        # correct id
+        CorrectIdDigits,
+        AddTaskId,
+        # CorrectTaskId,
+        CorrectIdMaually,
+        # CorrectIdDelimiter,
+        AddTaskCode,
+        CorrectIdBracket,
 
-    # correct body
-    CorrectBody,
+        # correct date
+        CorrectDate,
 
-    # correct Sequence
-    CorrectSpace,
-    CorrectSequence,
+        # correct type
+        CorrectReportType,
+        AddReportType,
+        CorrectTypeDelimiter,
 
-    CorrectDunder,
-]
+        # correct body
+        CorrectBody,
 
-for sub_class in correct_sub_classes:
-    Correct.register(sub_class)
+        # correct Sequence
+        CorrectSpace,
+        CorrectSequence,
 
+        CorrectDunder,
+    ]
+
+    for sub_class in correct_sub_classes:
+        Correct.register(sub_class)
+    return Correct(file_list)
     # @classmethod
     # def _correct_underscore(cls, file_name):
     #     format = "\_\d{1}-\d{3}-\d{3}-[A-Z]{2}\_"

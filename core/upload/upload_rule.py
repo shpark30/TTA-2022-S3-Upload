@@ -14,10 +14,14 @@ import local_config as cfg
 from core.correct.correct_id import (CorrectIdDigits, AddTaskId, CorrectIdMaually,
                                      AddTaskCode, CorrectDelimiter, CorrectIdBracket)
 from core.correct.correct_etc import (CorrectSpace)
-from upload import AwsS3Uploader
+from . import AwsS3Uploader
+
+#####
+complete = "확인 완료"
+#####
 
 
-def upload_rules(
+def upload_rule(
     ver,
     date,
     aws_access_key_id,
@@ -85,7 +89,7 @@ def upload_rules(
     # 확인 완료 구분하기
     data_info: pd.DataFrame = pd.read_csv(
         cfg.DATA_INFO_PATH.format(ver), encoding='cp949')
-    complete_id_list: pd.Series = data_info['number'][data_info[date] == "확인 완료"].tolist(
+    complete_id_list: pd.Series = data_info['number'][data_info[date] == complete].tolist(
     )
     complete_cond = diag_datasets["task_id"].apply(
         lambda x: x in complete_id_list)
@@ -98,7 +102,7 @@ def upload_rules(
 
     def correct_id(text, correctors: list):
         for corrector in correctors:
-            text = corrector.execute(text)
+            text = corrector.execute(text, data_info)
         return text
 
     corrected: pd.Series = target_datasets['dgnss_nm'].apply(lambda x: correct_id(x, [
@@ -121,7 +125,7 @@ def upload_rules(
 
     # 파일명 생성
 
-    def replace_slash(text):
+    def _replace_slash(text):
         if '/' not in text:
             return text
 
@@ -130,17 +134,17 @@ def upload_rules(
         print("after:", text)
         return text
 
-    def naming(text):
+    def _naming(text):
         finder = re.compile(f"^\[{cfg.ID_FORMAT}-{cfg.CATEGORY_FORMAT}\] ")
         find = finder.search(text)
         if find is None:
             raise Exception(f"{text}에 유효한 task_id가 없습니다.")
         idx = find.end()
-        text = text[:idx] + "사전검사규칙_" + text[idx:]
+        text = text[:idx] + f"{ver}검사규칙_" + text[idx:]
         return text
 
-    corrected_name = corrected.apply(replace_slash)
-    corrected_name = corrected_name.apply(naming)
+    corrected_name = corrected.apply(_replace_slash)
+    corrected_name = corrected_name.apply(_naming)
 
     # 검사 규칙 생성
     target_datasets['corrected'] = corrected_name
@@ -198,9 +202,11 @@ def upload_rules(
     # 디렉토리 검증
     rule_files = find_files_in_dir(save_path, pattern="\.json$")
     rule_files_id = list(map(extract_task_id, rule_files))
-    assert len(set(rule_files_id)-set(complete_cond)
+    # import pdb
+    # pdb.set_trace()
+    assert len(set(rule_files_id)-set(complete_id_list)
                ) == 0, f"{save_path}에 확인 완료되지 않은 과제의 검사 규칙이 포함되어 있습니다.\n{set(rule_files_id)-set(complete_cond)}"
-    assert len(set(complete_cond)-set(rule_files_id)
+    assert len(set(complete_id_list)-set(rule_files_id)
                ) == 0, f"{save_path}에 확인 완료된 과제의 검사 규칙이 없습니다.\n{set(complete_cond)-set(rule_files_id)}"
 
     # 업로드
@@ -295,4 +301,4 @@ if __name__ == "__main__":
     }
     ###########################
 
-    upload_rules(ver, date, **aws_dict)
+    upload_rule(ver, date, **aws_dict)

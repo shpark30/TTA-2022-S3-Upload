@@ -4,38 +4,10 @@ import pandas as pd
 
 import local_config as cfg
 import access_info as info
-from rename_result import correct_register
-from utils import path_join, find_files_in_dir
-from upload import AwsS3Uploader
 
-
-def main(
-    ver,
-    date,
-    aws_access_key_id,
-    aws_secret_access_key,
-    aws_bucket,
-    Prefix
-):
-    # 수정할 파일명 찾기
-    file_list = find_files_in_dir(
-        cfg.RESULT_DIR_ORIGINAL.format(ver, date), pattern="^((?!증적용).)*\.(csv|xlsx)$")
-
-    # 파일명 수정 및 New directory로 이동
-    correct = correct_register(file_list)
-    correct.execute()
-    correct.remove_older_files(p=True)
-    correct.copy_to(cfg.RESULT_DIR_EDIT.format(ver))
-
-    # S3 업로드
-    uploader = AwsS3Uploader(
-        aws_access_key_id=aws_access_key_id,
-        aws_secret_access_key=aws_secret_access_key,
-        aws_bucket=aws_bucket,
-        Prefix=Prefix
-    )
-    upload_list = find_files_in_dir(cfg.RESULT_DIR_EDIT.format(ver))
-    uploader.upload(upload_list, ver)
+from core.upload.upload_rule import upload_rule
+from core.upload.upload_result import upload_result
+from core.upload.upload_checklist import upload_checklist
 
 
 def get_inputs():
@@ -77,6 +49,10 @@ def get_inputs():
             continue
         break
 
+    return ver, date, aws_dict
+
+
+def validate_dirs(ver, date):
     # 디렉토리 검증
     print("디렉토리 검증 시작")
     for p in [
@@ -99,16 +75,25 @@ def get_inputs():
         raise Exception(
             f"{cfg.DATA_INFO_PATH.format(ver)}파일에 {date} 컬럼이 없습니다.")
 
-    return ver, date, aws_dict
+
+def main(
+    *args, **kwargs
+):
+    # 검사 규칙 업로드
+    upload_rule(*args, **kwargs)
+
+    # 사진 이슈 리포트 업로드
+    upload_checklist(*args, **kwargs)
+
+    # 검사 결과서 업로드
+    # upload_result(*args, **kwargs)
 
 
 if __name__ == "__main__":
     ver, date, aws_dict = get_inputs()
 
-    # # Task 수행
-    # main(ver=ver,
-    #      date=date,
-    #      aws_access_key_id=aws_access_key_id,
-    #      aws_secret_access_key=aws_secret_access_key,
-    #      aws_bucket=aws_bucket,
-    #      Prefix=Prefix)
+    validate_dirs(ver, date)
+
+    main(ver=ver,
+         date=date,
+         **aws_dict)
