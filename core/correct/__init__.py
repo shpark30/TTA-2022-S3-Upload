@@ -8,7 +8,7 @@ import re
 from datetime import datetime
 
 import local_config as cfg
-from utils import path_join, validate_name_format
+from utils import path_join, validate_name_format, extract_task_id
 
 
 class CorrectInterface:
@@ -43,6 +43,8 @@ class Correct(CorrectInterface):
             file_list), "파일 리스트에 중복이 있습니다."
         self.old_file_list = file_list
         self.new_file_dict = {}
+
+        self.data_info = None
 
     def __len__(self):
         if len(self.new_file_dict) == 0:
@@ -123,6 +125,7 @@ class Correct(CorrectInterface):
                 shutil.copy(old_path, new_path)
 
     def correct(self, file_path: str, data_info: pd.DataFrame, p=True) -> str:
+        self.data_info = data_info
         file_name = file_path.split("\\")[-1]
         prev_name = deepcopy(file_name)
         # if file_path == "페르소나 대화 데이터_형식오류목록_2022-08-25 14_07_54.csv":
@@ -183,3 +186,46 @@ class Correct(CorrectInterface):
 
         for older_file_name in remove_targets:
             del(self.new_file_dict[older_file_name])
+
+        self.__validate_date
+
+    def __validate_date(self, date):
+        if len(self.data_info.columns) == 5:
+            return
+
+        def _validate(text):
+            validator = re.compile(cfg.MMDD)
+            return validator.match(text) is not None
+        columns = self.data_info.columns
+        assert _validate(columns[-1])
+        assert _validate(columns[-2])
+        assert date == columns[-1]
+
+        done_cond = self.data_info.iloc[:, -2] == "확인 완료"
+        done_tasks = self.data_info.loc[:, "number"][done_cond].tolist()
+
+        curr_cond = self.data_info.iloc[:, -2] == "확인 완료"
+        curr_tasks = self.data_info.loc[:, "number"][curr_cond].tolist()
+
+        assert len(set(done_tasks) - set(curr_tasks)
+                   ) == 0, f"data_info.csv의 {date}컬럼에 확인 완료되지 않은 과제 중 {columns[-2]}컬럼에 확인 완료된 과제가 있습니다."
+
+        todo_tasks = list(set(curr_tasks) - set(done_tasks))
+
+        assert set(todo_tasks) == set(map(extract_task_id, self.new_file_dict.values(
+        ))), f"새로 이관할 파일과 data_info.csv 상 새로 확인 완료된 파일이 다릅니다."
+
+
+if __name__ == "__main__":
+    from utils import find_files_in_dir
+    from core.rename_checklist import correct_register
+    ver = "사전"
+    date = "12.06"
+
+    files = find_files_in_dir(cfg.REPORT_DIR_ORIGINAL.format(
+        ver, date), pattern="^.*\.docs$")
+
+    corrector = correct_register(files)
+    data_info = pd.read_csv(cfg.DATA_INFO_PATH.format(ver), encoding="cp040")
+    corrector.execute()
+    corrector.remove_older_files(p=True)

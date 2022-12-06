@@ -1,3 +1,5 @@
+MMDD = "(11|12|01|02|03)\.(3[0-1]|[0-2][0-9])"
+
 DATA_INFO_PATH = "W:/2022 TTA/2022 이관/{0}/data_info.csv"
 RESULT_DIR_ORIGINAL = "W:/2022 TTA/2022 이관/{0}/검사 결과/{1}"
 RESULT_DIR_EDIT = "W:/2022 TTA/2022 이관/{0}/검사 결과/EDIT"

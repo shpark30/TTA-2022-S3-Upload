@@ -41,7 +41,7 @@ def get_inputs():
         break
 
     # 확인 완료 날짜
-    date_validator = re.compile("(11|12|01|02|03)\.(3[0-1]|[0-2][0-9])")
+    date_validator = re.compile(cfg.MMDD)
     while 1:
         date = input("날짜를 입력해주세요.(mm.dd): ")
         if date_validator.match(date) is None:
