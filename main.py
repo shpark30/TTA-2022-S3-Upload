@@ -38,7 +38,7 @@ def main(
     uploader.upload(upload_list, ver)
 
 
-if __name__ == "__main__":
+def get_inputs():
     # Test 여부
     while 1:
         test = input("테스트 여부를 선택하세요(Y, N): ")
@@ -48,16 +48,17 @@ if __name__ == "__main__":
         test = test == "Y"
         break
 
+    aws_dict = {}
     if test:
-        aws_access_key_id = info.ACCESS_KEY_ID,
-        aws_secret_access_key = info.SECRET_ACCESS_KEY,
-        aws_bucket = info.BUCKET_NAME,
-        Prefix = info.ROOT
+        aws_dict["aws_access_key_id"] = info.ACCESS_KEY_ID,
+        aws_dict["aws_secret_access_key"] = info.SECRET_ACCESS_KEY,
+        aws_dict["aws_bucket"] = info.BUCKET_NAME,
+        aws_dict["Prefix"] = info.ROOT
     else:
-        aws_access_key_id = info.TEST_ACCESS_KEY_ID,
-        aws_secret_access_key = info.TEST_SECRET_ACCESS_KEY,
-        aws_bucket = info.TEST_BUCKET_NAME,
-        Prefix = info.TEST_ROOT
+        aws_dict["aws_access_key_id"] = info.TEST_ACCESS_KEY_ID,
+        aws_dict["aws_secret_access_key"] = info.TEST_SECRET_ACCESS_KEY,
+        aws_dict["aws_bucket"] = info.TEST_BUCKET_NAME,
+        aws_dict["Prefix"] = info.TEST_ROOT
 
     # 사전 / 최종
     while 1:
@@ -97,6 +98,12 @@ if __name__ == "__main__":
     else:
         raise Exception(
             f"{cfg.DATA_INFO_PATH.format(ver)}파일에 {date} 컬럼이 없습니다.")
+
+    return ver, date, aws_dict
+
+
+if __name__ == "__main__":
+    ver, date, aws_dict = get_inputs()
 
     # # Task 수행
     # main(ver=ver,

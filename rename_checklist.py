@@ -3,14 +3,14 @@ import pandas as pd
 from utils import find_files_in_dir
 import local_config as cfg
 
-from rename.correct import Correct
-from rename.correct.correct_id import (CorrectIdDigits, AddTaskId, CorrectIdMaually,
-                                       AddTaskCode, CorrectIdBracket)
-from rename.correct.correct_type import CorrectReportType, AddReportType, CorrectTypeDelimiter
-from rename.correct.correct_body import CorrectBody
-from rename.correct.correct_date import CorrectDate
-from rename.correct.correct_etc import (CorrectDuplication, CorrectSequence,
-                                        CorrectSpace, CorrectRepeatExtension, CorrectDunder)
+from core.correct import Correct
+from core.correct.correct_id import (CorrectIdDigits, AddTaskId, CorrectIdMaually,
+                                     AddTaskCode, CorrectIdBracket)
+from core.correct.correct_type import CorrectReportType, AddReportType, CorrectTypeDelimiter
+from core.correct.correct_body import CorrectBody
+from core.correct.correct_date import CorrectDate
+from core.correct.correct_etc import (CorrectDuplication, CorrectSequence,
+                                      CorrectSpace, CorrectRepeatExtension, CorrectDunder)
 
 # 메타클래스 정의(클래스를 생성하는 클래스)
 correct_sub_classes = [
