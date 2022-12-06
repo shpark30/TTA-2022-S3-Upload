@@ -214,18 +214,3 @@ class Correct(CorrectInterface):
 
         assert set(todo_tasks) == set(map(extract_task_id, self.new_file_dict.values(
         ))), f"새로 이관할 파일과 data_info.csv 상 새로 확인 완료된 파일이 다릅니다."
-
-
-if __name__ == "__main__":
-    from utils import find_files_in_dir
-    from core.rename_checklist import correct_register
-    ver = "사전"
-    date = "12.06"
-
-    files = find_files_in_dir(cfg.REPORT_DIR_ORIGINAL.format(
-        ver, date), pattern="^.*\.docs$")
-
-    corrector = correct_register(files)
-    data_info = pd.read_csv(cfg.DATA_INFO_PATH.format(ver), encoding="cp040")
-    corrector.execute()
-    corrector.remove_older_files(p=True)
