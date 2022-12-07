@@ -1,20 +1,23 @@
 import pandas as pd
+import sys
+from pathlib import Path
 
-from utils import find_files_in_dir
-import local_config as cfg
+root = Path(__file__).parent.parent
+sys.path.append(str(root))
 
-from core.correct import Correct
-from core.correct.correct_id import (CorrectIdDigits, AddTaskId, CorrectIdMaually,
-                                     AddTaskCode, CorrectIdBracket)
-from core.correct.correct_type import CorrectReportType, AddReportType, CorrectTypeDelimiter
-from core.correct.correct_body import CorrectBody
-from core.correct.correct_date import CorrectDate
 from core.correct.correct_etc import (CorrectDuplication, CorrectSequence,
                                       CorrectSpace, CorrectRepeatExtension, CorrectDunder)
+from core.correct.correct_date import CorrectDate
+from core.correct.correct_body import CorrectBody
+from core.correct.correct_type import CorrectReportType, AddReportType, CorrectTypeDelimiter
+from core.correct.correct_id import (CorrectIdDigits, AddTaskId, CorrectIdMaually,
+                                     AddTaskCode, CorrectIdBracket)
+from core.correct import Correct
+import local_config as cfg
+from utils import find_files_in_dir
+
 
 # 메타클래스 정의(클래스를 생성하는 클래스)
-
-
 def correct_register(file_list):
     correct_sub_classes = [
         CorrectDuplication,
@@ -105,15 +108,16 @@ if __name__ == "__main__":
 
     # rename
     ver = "사전"
-    date = "11.23"
-    file_list = find_files_in_dir(
-        cfg.REPORT_DIR_ORIGINAL.format(ver, date), pattern='docx$')
-    import os
+    date = "12.06"
 
-    print(len(os.listdir(cfg.REPORT_DIR_ORIGINAL.format(ver, date))))
-    print(len(file_list))
+    # 수정할 파일명 찾기
+    file_list = find_files_in_dir(
+        cfg.REPORT_DIR_ORIGINAL.format(ver, date), pattern="^.*\.docx$")
+    assert len(file_list) > 1
+    # 파일명 수정 및 New directory로 이동
     data_info = pd.read_csv(cfg.DATA_INFO_PATH.format(ver), encoding="cp949")
-    correct = Correct(file_list, data_info)
-    correct.execute(p=True)
-    correct.remove_older_files()
-    correct.copy_to(cfg.REPORT_DIR_EDIT)
+    correct = correct_register(file_list)
+    correct.execute(data_info, p=True)
+    correct.remove_older_files(p=True)
+    correct.validate_before(date)
+    correct.copy_to(cfg.REPORT_DIR_EDIT.format(ver))

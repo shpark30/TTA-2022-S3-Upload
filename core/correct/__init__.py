@@ -55,7 +55,8 @@ class Correct(CorrectInterface):
     def register(cls, sub_class):
         cls.REGISTRY[sub_class.__name__] = sub_class
 
-    def execute(self, p=False):
+    def execute(self, data_info, p=False):
+        self.data_info = data_info
         if len(self.new_file_dict):
             print("이미 execute를 실행했습니다.")
             return
@@ -124,15 +125,11 @@ class Correct(CorrectInterface):
             if not os.path.exists(new_path):
                 shutil.copy(old_path, new_path)
 
-    def correct(self, file_path: str, data_info: pd.DataFrame, p=True) -> str:
-        self.data_info = data_info
+    def correct(self, file_path: str, p=True) -> str:
         file_name = file_path.split("\\")[-1]
         prev_name = deepcopy(file_name)
-        # if file_path == "페르소나 대화 데이터_형식오류목록_2022-08-25 14_07_54.csv":
-        # import pdb
-        # pdb.set_trace()
         for name, sub_class in self.REGISTRY.items():
-            file_name = sub_class.execute(file_name, data_info)
+            file_name = sub_class.execute(file_name, self.data_info)
         try:
             validate_name_format(file_name)
         except Exception as e:
@@ -187,9 +184,7 @@ class Correct(CorrectInterface):
         for older_file_name in remove_targets:
             del(self.new_file_dict[older_file_name])
 
-        self.__validate_date
-
-    def __validate_date(self, date):
+    def validate_before(self, date):
         if len(self.data_info.columns) == 5:
             print("직전 이관이 없어 비교 검증 생략")
             return
@@ -203,18 +198,25 @@ class Correct(CorrectInterface):
         assert _validate(columns[-1])
         assert _validate(columns[-2])
         assert date == columns[-1]
+        print(columns[-2], "vs", columns[-1])
 
         done_cond = self.data_info.iloc[:, -2] == "확인 완료"
         done_tasks = self.data_info.loc[:, "number"][done_cond].tolist()
 
-        curr_cond = self.data_info.iloc[:, -2] == "확인 완료"
+        curr_cond = self.data_info.iloc[:, -1] == "확인 완료"
         curr_tasks = self.data_info.loc[:, "number"][curr_cond].tolist()
 
-        assert len(set(done_tasks) - set(curr_tasks)
-                   ) == 0, f"data_info.csv의 {date}컬럼에 확인 완료되지 않은 과제 중 {columns[-2]}컬럼에 확인 완료된 과제가 있습니다."
+        assert len(set(done_tasks) - set(curr_tasks)) == 0, \
+            f"data_info.csv의 {date}컬럼에 확인 완료되지 않은 과제 중 {columns[-2]}컬럼에 확인 완료된 과제가 있습니다."
+
+        # if len(self.old_file_list) == len(self.new_file_dict):
+        #     print("EDIT 디렉토리가 비어있습니다.")
+        #     return
 
         todo_tasks = list(set(curr_tasks) - set(done_tasks))
-
-        assert set(todo_tasks) == set(map(extract_task_id, self.new_file_dict.values(
-        ))), f"새로 이관할 파일과 data_info.csv 상 새로 확인 완료된 파일이 다릅니다."
+        new_tasks = list(map(extract_task_id, self.new_file_dict.values()))
+        assert len(set(todo_tasks) - set(new_tasks)) == 0, \
+            f"data_info.csv 상 확인 완료된 과제 중 이관 대상 과제가 있습니다.\n{len(set(todo_tasks)), len(set(todo_tasks) - set(new_tasks))}\n{set(todo_tasks) - set(new_tasks)}"
+        assert len(set(new_tasks) - set(todo_tasks)) == 0, \
+            f"이관 대상 과제 중 data_info.csv 상 확인 완료되지 않은 과제가 있습니다.\n{len(set(new_tasks)), len(set(new_tasks) - set(todo_tasks))}\n{set(new_tasks) - set(todo_tasks)}"
         print("검증 완료")

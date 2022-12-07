@@ -14,7 +14,7 @@ def upload_checklist(
 ):
     # 수정할 파일명 찾기
     file_list = find_files_in_dir(
-        cfg.RESULT_DIR_ORIGINAL.format(ver, date), pattern="^.*\.docs$")
+        cfg.RESULT_DIR_ORIGINAL.format(ver, date), pattern="^.*\.docx$")
 
     # 파일명 수정 및 New directory로 이동
     correct = correct_register(file_list)

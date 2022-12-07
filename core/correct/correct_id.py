@@ -261,6 +261,8 @@ class CorrectIdBracket(CorrectInterface):
             file_name = file_name[:end] + "]" + file_name[end+2:]
         elif file_name[end:end+2] == "]_":  # "_" : end+1
             file_name = file_name[:end+1] + file_name[end+2:]
+        elif file_name[end:end+2] == "__":  # "_" : end+1
+            file_name = file_name[:end] + "]" + file_name[end+2:]
         elif file_name[end:end+2] == " _":  # "_" : end+1
             file_name = file_name[:end] + "]" + file_name[end+2:]
         elif file_name[end] in ["_", ")"]:

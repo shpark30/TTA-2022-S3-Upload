@@ -3,7 +3,6 @@ import os
 import re
 import local_config as cfg
 
-
 def get_task_num(file_name: str) -> str:
     ''' [x-xxx-xxx]... -> x-xxx-xxx'''
     numbers = file_name.split('-')[:3]
