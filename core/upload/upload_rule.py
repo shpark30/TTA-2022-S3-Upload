@@ -200,14 +200,14 @@ def upload_rule(
 
     # 규칙 업로드
     # 디렉토리 검증
-    rule_files = find_files_in_dir(save_path, pattern="\.json$")
+    rule_files = find_files_in_dir(save_path, pattern="^.*\.json$")
     rule_files_id = list(map(extract_task_id, rule_files))
     # import pdb
     # pdb.set_trace()
     assert len(set(rule_files_id)-set(complete_id_list)
-               ) == 0, f"{save_path}에 확인 완료되지 않은 과제의 검사 규칙이 포함되어 있습니다.\n{set(rule_files_id)-set(complete_cond)}"
+               ) == 0, f"{save_path}에 확인 완료되지 않은 과제의 검사 규칙이 포함되어 있습니다.\n{set(rule_files_id)-set(complete_id_list)}"
     assert len(set(complete_id_list)-set(rule_files_id)
-               ) == 0, f"{save_path}에 확인 완료된 과제의 검사 규칙이 없습니다.\n{set(complete_cond)-set(rule_files_id)}"
+               ) == 0, f"{save_path}에 확인 완료된 과제의 검사 규칙이 없습니다.\n{set(complete_id_list)-set(rule_files_id)}"
 
     # 업로드
     uploader = AwsS3Uploader(
