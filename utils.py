@@ -31,7 +31,7 @@ def find_files_in_dir(root, pattern=None):
             result.extend(find_files_in_dir(path, pattern))
             continue
 
-        if reg_pattern and reg_pattern.search(path) is None:
+        if reg_pattern and reg_pattern.match(path) is None:
             continue
         result.append(path)
     return result
