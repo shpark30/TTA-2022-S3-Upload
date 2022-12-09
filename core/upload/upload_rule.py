@@ -29,7 +29,8 @@ def upload_rule(
     aws_bucket,
     Prefix
 ):
-    save_path = cfg.RULE_DIR_EDIT.format(ver, date)
+    save_path = cfg.RULE_DIR_ORIGIN.format(ver, date)
+    edit_path = cfg.RULE_DIR_EDIT.format(ver)
     engine = db.create_engine(info.url)
 
     rules: pd.DataFrame = pd.read_sql(info.rule_query, engine)
@@ -83,7 +84,7 @@ def upload_rule(
         assert ver in ["사전", "최종"], f"{text}에 \"사전\", \"최종\"이 없습니다."
         return ver
 
-    diag_datasets['ver'] = diag_datasets['group_nm'].apply(extract_version)
+    diag_datasets.loc[:, 'ver'] = diag_datasets.loc[:, 'group_nm'].apply(extract_version)
     ver_cond: pd.Series = diag_datasets['ver'] == ver
 
     # 확인 완료 구분하기
@@ -147,7 +148,7 @@ def upload_rule(
     corrected_name = corrected_name.apply(_naming)
 
     # 검사 규칙 생성
-    target_datasets['corrected'] = corrected_name
+    target_datasets.loc[:, 'corrected'] = corrected_name
 
     for name, rule in zip(
         target_datasets.loc[:, 'corrected'].tolist(),
@@ -170,7 +171,6 @@ def upload_rule(
                              in complete_cond, json_files))
 
     # 저장
-
     def extract_task_id_code(text):
         id_format = "\d-\d{3}-\d{3}-[A-Z]{2}"
         finder = re.compile(id_format)
@@ -195,21 +195,25 @@ def upload_rule(
         new_file = path_join(save_path, file_name)
         if os.path.exists(new_file):
             continue
-        print(new_file)
         shutil.copy(json_file, new_file)
 
-    # 규칙 업로드
-    # 디렉토리 검증
-    rule_files = find_files_in_dir(save_path, pattern="^.*\.json$")
-    rule_files_id = list(map(extract_task_id, rule_files))
-    # import pdb
-    # pdb.set_trace()
-    assert len(set(rule_files_id)-set(complete_id_list)
-               ) == 0, f"{save_path}에 확인 완료되지 않은 과제의 검사 규칙이 포함되어 있습니다.\n{set(rule_files_id)-set(complete_id_list)}"
-    assert len(set(complete_id_list)-set(rule_files_id)
-               ) == 0, f"{save_path}에 확인 완료된 과제의 검사 규칙이 없습니다.\n{set(complete_id_list)-set(rule_files_id)}"
+    # target dir에 copy
+    for json_file in find_files_in_dir(save_path, pattern="^.*\.json$"):
+        copy_path = path_join(edit_path, json_file.split("/")[-1])
+        if os.path.exists(copy_path):
+            continue
+        shutil.copy(json_file, copy_path)
 
-    # 업로드
+    # 규칙 업로드
+    ## 디렉토리 검증
+    rule_files = find_files_in_dir(edit_path, pattern="^.*\.json$")
+    rule_files_id = list(map(extract_task_id, rule_files))
+    assert len(set(rule_files_id)-set(complete_id_list)
+               ) == 0, f"{edit_path}에 확인 완료되지 않은 과제의 검사 규칙이 포함되어 있습니다.\n{set(rule_files_id)-set(complete_id_list)}"
+    assert len(set(complete_id_list)-set(rule_files_id)
+               ) == 0, f"{edit_path}에 확인 완료된 과제의 검사 규칙이 없습니다.\n{set(complete_id_list)-set(rule_files_id)}"
+
+    ## 업로드
     uploader = AwsS3Uploader(
         aws_access_key_id=aws_access_key_id,
         aws_secret_access_key=aws_secret_access_key,

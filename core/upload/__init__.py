@@ -24,15 +24,17 @@ class AwsS3Uploader():
         self.Delimiter = Delimiter
 
         # S3 리소스
-        self.s3_resource = boto3.resource('s3',
-                                          aws_access_key_id=self.aws_access_key_id,
-                                          aws_secret_access_key=self.aws_secret_access_key)
+        self.s3_resource = boto3.resource(
+            's3',
+            aws_access_key_id=self.aws_access_key_id,
+            aws_secret_access_key=self.aws_secret_access_key
+        )
 
         # S3 클라이언트
         self.s3_client = boto3.client(
             service_name="s3",
             aws_access_key_id=self.aws_access_key_id,
-            aws_secret_access_key=self.aws_secret_access_key,
+            aws_secret_access_key=self.aws_secret_access_key
         )
 
         # S3 이관 디렉토리
@@ -78,7 +80,8 @@ class AwsS3Uploader():
 
             # path setting
             to_path = get_method(file_name, ver)
-
+            # import pdb
+            # pdb.set_trace()
             if self.__is_s3_object_exists(to_path):
                 existed_num += 1
                 if not overwrite:
@@ -111,12 +114,9 @@ class AwsS3Uploader():
             f"{ver}검사구조오류목록",
             f"{ver}검사파일오류목록"
         ]:
-            per_task_path = path_join(per_task_path, ver, "검사 결과서")
-        elif report_type in [
-            f"{ver}검사규칙",
-        ]:
-            per_task_path = path_join(per_task_path, ver, "검사 규칙")
-
+            per_task_path = path_join(per_task_path, ver, "검사 결과서/")
+        elif report_type == f"{ver}검사규칙":
+            per_task_path = path_join(per_task_path, ver, "검사 규칙/")
         self.__validate_s3_object_exists(per_task_path)
         return path_join(per_task_path, file_name)
 
@@ -136,17 +136,13 @@ class AwsS3Uploader():
             f"{ver}검사구조오류목록",
             f"{ver}검사파일오류목록"
         ]:
-            target_folder_name = f"{ver}검사결과서"
+            target_folder_name = f"{ver}검사결과서/"
 
-        elif report_type in [
-            f"{ver}이슈리포트",
-        ]:
-            target_folder_name = f"체크리스트({ver})"
+        elif report_type == f"{ver}이슈리포트":
+            target_folder_name = f"체크리스트({ver})/"
 
-        elif report_type in [
-            f"{ver}검사규칙"
-        ]:
-            target_folder_name = f"{ver}검사규칙"
+        elif report_type == f"{ver}검사규칙":
+            target_folder_name = f"{ver}검사규칙/"
 
         per_type_path = path_join(root, target_folder_name)
 
@@ -155,35 +151,53 @@ class AwsS3Uploader():
         per_type_path = path_join(per_type_path, file_name)
         return per_type_path
 
-    def __get_task_directories(self,
-                               aws_bucket,
-                               Prefix,
-                               Delimiter) -> dict:
+    def __get_task_directories(
+            self,
+            aws_bucket,
+            Prefix,
+            Delimiter) -> dict:
         response = self.s3_client.list_objects(
             Bucket=aws_bucket,
             Prefix=Prefix,
             Delimiter=Delimiter)
+        
         s3_dir_list = [o.get('Prefix') for o in response.get('CommonPrefixes')]
         return {extract_task_id(directory): directory for directory in s3_dir_list}
 
     def __validate_s3_object_exists(self, key):
-        if not self.__is_s3_object_exists(key+"/"):
+        if not self.__is_s3_object_exists(key):
             raise Exception(f"\"{key}\"가 S3에 없습니다.")
 
     def __is_s3_object_exists(self, key):
-        object = self.s3_resource.Object(self.aws_bucket, key)
-        try:
-            object.load()
-        except botocore.exceptions.ClientError as e:
-            if e.response['Error']['Code'] == "404":
-                # The object dost not exist
-                return False
-            else:
-                # Somthing else has gone wrong
-                raise
-        else:
-            # The object does exist
-            return True
+        res = self.s3_client.list_objects_v2(Bucket=self.aws_bucket, Prefix=key, MaxKeys=1)
+        return 'Contents' in res
+    # def __is_s3_object_exists(self, key):
+    #     response = self.s3_client.list_objects(
+    #         Bucket=self.aws_bucket,
+    #         Prefix=path_join(*key.split("/")[:-1]) + "/",
+    #         Delimiter="/"
+    #     )
+    #     response = response.get('CommonPrefixes')
+    #     if response is None:
+    #         return False
+
+    #     object_list = [o.get('Prefix') for o in response]
+    #     return key in object_list
+
+    # def __is_s3_object_exists(self, key):
+    #     object = self.s3_resource.Object(self.aws_bucket, key)
+    #     try:
+    #         object.load()
+    #     except botocore.exceptions.ClientError as e:
+    #         if e.response['Error']['Code'] == "404":
+    #             # The object dost not exist
+    #             return False
+    #         else:
+    #             # Somthing else has gone wrong
+    #             raise e
+    #     else:
+    #         # The object does exist
+    #         return True
 
     def __validate_file_exist_in_local(self, file_path):
         if not os.path.exists(file_path):

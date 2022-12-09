@@ -22,15 +22,15 @@ def get_inputs():
 
     aws_dict = {}
     if test:
-        aws_dict["aws_access_key_id"] = info.ACCESS_KEY_ID,
-        aws_dict["aws_secret_access_key"] = info.SECRET_ACCESS_KEY,
-        aws_dict["aws_bucket"] = info.BUCKET_NAME,
-        aws_dict["Prefix"] = info.ROOT
-    else:
-        aws_dict["aws_access_key_id"] = info.TEST_ACCESS_KEY_ID,
-        aws_dict["aws_secret_access_key"] = info.TEST_SECRET_ACCESS_KEY,
-        aws_dict["aws_bucket"] = info.TEST_BUCKET_NAME,
+        aws_dict["aws_access_key_id"] = info.TEST_ACCESS_KEY_ID
+        aws_dict["aws_secret_access_key"] = info.TEST_SECRET_ACCESS_KEY
+        aws_dict["aws_bucket"] = info.TEST_BUCKET_NAME
         aws_dict["Prefix"] = info.TEST_ROOT
+    else:
+        aws_dict["aws_access_key_id"] = info.ACCESS_KEY_ID
+        aws_dict["aws_secret_access_key"] = info.SECRET_ACCESS_KEY
+        aws_dict["aws_bucket"] = info.BUCKET_NAME
+        aws_dict["Prefix"] = info.ROOT
 
     # 사전 / 최종
     while 1:
@@ -80,18 +80,27 @@ def main(
     *args, **kwargs
 ):
     # 검사 규칙 업로드
+    print("검사 규칙 업로드")
     upload_rule(*args, **kwargs)
+    print("완료")
+    print("="*50)
 
     # 사진 이슈 리포트 업로드
+    print("체크리스트 업로드")
     upload_checklist(*args, **kwargs)
+    print("완료")
+    print("="*50)
 
     # 검사 결과서 업로드
-    # upload_result(*args, **kwargs)
+    print("검사 결과서 업로드")
+    upload_result(*args, **kwargs)
+    print("완료")
+    print("="*50)
 
 
 if __name__ == "__main__":
     ver, date, aws_dict = get_inputs()
-
+    
     validate_dirs(ver, date)
 
     main(ver=ver,
