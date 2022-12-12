@@ -8,7 +8,7 @@ import pandas as pd
 import local_config as cfg
 from utils import find_files_in_dir
 
-def main(ver, date):
+def unzip(ver, date):
     data_info = pd.read_csv(cfg.DATA_INFO_PATH.format(ver), encoding="cp949")
 
     def _is_mmdd(text):
@@ -34,12 +34,12 @@ def main(ver, date):
 
     # 직전 과제 목록 가져오기
     prev_date = date_columns[-2]
-    zip_name = cfg.RESULT_DIR_ORIGINAL.format(ver, prev_date) + ".zip"
+    zip_name = cfg.RESULT_DIR_ORIGINAL.format(ver, prev_date) + "_검사결과서.zip"
     with ZipFile(zip_name, 'r') as zip_obj:
         immigrated_tasks = [fn.encode('cp437').decode('utf-8') for fn in zip_obj.namelist()]
 
     # 이번 과제 목록 가져오기
-    zip_name = cfg.RESULT_DIR_ORIGINAL.format(ver, date) + ".zip"
+    zip_name = cfg.RESULT_DIR_ORIGINAL.format(ver, date) + "_검사결과서.zip"
     with ZipFile(zip_name, 'r') as zip_obj:
         to_immigrate_tasks = [fn.encode('cp437').decode('utf-8') for fn in zip_obj.namelist()]
     
@@ -68,16 +68,20 @@ def main(ver, date):
                 continue
             zip_files.append(file)
 
-        for file_info in tqdm(zip_files, total=len(zip_files)):
+        for file_info in tqdm(zip_files, total=len(zip_files), desc="이관 대상 과제 압축 풀기"):
             zip_obj.extract(file_info, target_dir)
 
     # 개별 과제 압축 파일 풀기
-    zip_files = find_files_in_dir(target_dir, pattern="^.*\.zip")
-    for zip_file in tqdm(zip_files, total=len(zip_files)):
+    zip_files = find_files_in_dir(target_dir, pattern="^.*\.(zip|Zip)")
+    for zip_file in tqdm(zip_files, total=len(zip_files), desc="개별 과제 압축 파일 풀기"):
         with ZipFile(zip_file, 'r') as zip_obj:
             files = []
             for file in zip_obj.infolist():
-                file.filename = file.filename.encode('cp437').decode('euc-kr')
+                try:
+                    file.filename = file.filename.encode('cp437').decode('euc-kr')
+                except UnicodeEncodeError as e:
+                    file.filename = file.filename.encode('euc-kr').decode('cp949')
+                    
                 if os.path.exists(os.path.join(target_dir, file.filename)):
                     continue
                 files.append(file)
@@ -89,4 +93,4 @@ def main(ver, date):
 if __name__=="__main__":
     ver = input("사전/최종: ")
     date = input("날짜: ")
-    main(ver, date)
+    unzip(ver, date)

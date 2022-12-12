@@ -30,7 +30,7 @@ def upload_rule(
     Prefix
 ):
     save_path = cfg.RULE_DIR_ORIGIN.format(ver, date)
-    edit_path = cfg.RULE_DIR_EDIT.format(ver)
+    edit_path = cfg.RULE_DIR_EDIT.format(ver, date)
     engine = db.create_engine(info.url)
 
     rules: pd.DataFrame = pd.read_sql(info.rule_query, engine)
@@ -210,9 +210,13 @@ def upload_rule(
     rule_files_id = list(map(extract_task_id, rule_files))
     assert len(set(rule_files_id)-set(complete_id_list)
                ) == 0, f"{edit_path}에 확인 완료되지 않은 과제의 검사 규칙이 포함되어 있습니다.\n{set(rule_files_id)-set(complete_id_list)}"
-    assert len(set(complete_id_list)-set(rule_files_id)
-               ) == 0, f"{edit_path}에 확인 완료된 과제의 검사 규칙이 없습니다.\n{set(complete_id_list)-set(rule_files_id)}"
-
+    if len(set(complete_id_list)-set(rule_files_id)) != 0:
+        print(f"{edit_path}에 확인 완료된 과제의 검사 규칙({len(set(complete_id_list)-set(rule_files_id))})이 없습니다.\n{set(complete_id_list)-set(rule_files_id)}")
+        contn = input("계속 진행하시겠습니까?(Y/N): ")
+        assert contn in ["Y", "N"]
+        if contn == "N":
+            raise
+    
     ## 업로드
     uploader = AwsS3Uploader(
         aws_access_key_id=aws_access_key_id,

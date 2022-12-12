@@ -16,7 +16,7 @@ def upload_checklist(
 ):
     # 수정할 파일명 찾기
     file_list = find_files_in_dir(
-        cfg.RESULT_DIR_ORIGINAL.format(ver, date), pattern="^.*\.docx$")
+        cfg.REPORT_DIR_ORIGINAL.format(ver, date), pattern="^.*\.docx$")
 
     # data info
     data_info = pd.read_csv(cfg.DATA_INFO_PATH.format(ver), encoding='cp949')
@@ -25,7 +25,7 @@ def upload_checklist(
     correct = correct_register(file_list)
     correct.execute(data_info)
     correct.remove_older_files(p=True)
-    correct.copy_to(cfg.REPORT_DIR_EDIT.format(ver))
+    correct.copy_to(cfg.REPORT_DIR_EDIT.format(ver, date))
 
     # S3 업로드
     uploader = AwsS3Uploader(
@@ -34,5 +34,5 @@ def upload_checklist(
         aws_bucket=aws_bucket,
         Prefix=Prefix
     )
-    upload_list = find_files_in_dir(cfg.REPORT_DIR_EDIT.format(ver))
+    upload_list = find_files_in_dir(cfg.REPORT_DIR_EDIT.format(ver, date), pattern="^.*\.docx$")
     uploader.upload(upload_list, ver)

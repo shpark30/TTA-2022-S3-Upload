@@ -5,6 +5,7 @@ import pandas as pd
 import local_config as cfg
 import access_info as info
 
+from unzip import unzip
 from core.upload.upload_rule import upload_rule
 from core.upload.upload_result import upload_result
 from core.upload.upload_checklist import upload_checklist
@@ -58,9 +59,10 @@ def validate_dirs(ver, date):
     for p in [
         cfg.DATA_INFO_PATH.format(ver),
         cfg.RESULT_DIR_ORIGINAL.format(ver, date),
-        cfg.RESULT_DIR_EDIT.format(ver),
+        cfg.RESULT_DIR_EDIT.format(ver, date),
         cfg.REPORT_DIR_ORIGINAL.format(ver, date),
-        cfg.REPORT_DIR_EDIT.format(ver),
+        cfg.REPORT_DIR_EDIT.format(ver, date),
+        cfg.RULE_DIR_ORIGIN.format(ver, date),
         cfg.RULE_DIR_EDIT.format(ver, date),
     ]:
         if not os.path.exists(p):
@@ -76,24 +78,40 @@ def validate_dirs(ver, date):
             f"{cfg.DATA_INFO_PATH.format(ver)}파일에 {date} 컬럼이 없습니다.")
 
 
-def main(
-    *args, **kwargs
-):
+def main(ver, date, **kwargs):
+    # 결과서 압축 풀기
+    print("결과서 압축 풀기")
+    unzip(ver, date)
+    
+    while 1:
+        contn = input("업로드를 진행하시겠습니까?(Y/N): ")
+        if contn not in ["Y", "N"]:
+            print("\"Y\" 혹은 \"N\"만 입력하세요.")
+            continue
+        break
+
+    if contn == "N":
+        return
+
+    print("완료")
+    print("="*50)
+    
+
     # 검사 규칙 업로드
     print("검사 규칙 업로드")
-    upload_rule(*args, **kwargs)
+    # upload_rule(ver, date, **kwargs)
     print("완료")
     print("="*50)
 
     # 사진 이슈 리포트 업로드
     print("체크리스트 업로드")
-    upload_checklist(*args, **kwargs)
+    # upload_checklist(ver, date, **kwargs)
     print("완료")
     print("="*50)
 
     # 검사 결과서 업로드
     print("검사 결과서 업로드")
-    upload_result(*args, **kwargs)
+    upload_result(ver, date, **kwargs)
     print("완료")
     print("="*50)
 
@@ -103,6 +121,4 @@ if __name__ == "__main__":
     
     validate_dirs(ver, date)
 
-    main(ver=ver,
-         date=date,
-         **aws_dict)
+    main(ver=ver, date=date, **aws_dict)

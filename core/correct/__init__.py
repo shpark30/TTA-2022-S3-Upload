@@ -1,3 +1,8 @@
+import sys
+from pathlib import Path
+root = Path(__file__).parent.parent.parent
+sys.path.append(str(root))
+
 import os
 import shutil
 from collections import OrderedDict, defaultdict
@@ -73,7 +78,7 @@ class Correct(CorrectInterface):
             return
 
         file_list = list(filter(lambda x: x.split(
-            ".")[-1] in ["csv", "xlsx"], os.listdir(root)))
+            ".")[-1] in ["csv", "xlsx", "docx", "json"], os.listdir(root)))
         if progress_bar:
             bar = tqdm(file_list, total=len(file_list))
         else:
@@ -86,6 +91,20 @@ class Correct(CorrectInterface):
                 os.remove(new_path)
                 continue
             os.rename(old_path, new_path)
+
+    def delete(self, root, progress_bar: bool = True):
+        remove_files = self.new_file_dict.values()
+        remove_files = list(map(lambda x: path_join(root, x), remove_files))
+        remove_files = list(filter(os.path.exists, remove_files))
+        
+        if progress_bar:
+            bar = tqdm(self.new_file_dict.values(), total=len(self.new_file_dict))
+        else:
+            bar = self.new_file_dict.values()
+
+        for old_file in bar:
+            if os.path.exists(old_file):
+                os.remove(old_file)
 
     def copy_to(self, root, overwrite=False, progress_bar: bool = True):
         """ 기존 파일의 수정 버전을 root 하위에 옮긴다. """
@@ -128,6 +147,9 @@ class Correct(CorrectInterface):
     def correct(self, file_path: str, p=True) -> str:
         file_name = file_path.split("\\")[-1]
         prev_name = deepcopy(file_name)
+        # if file_name=="[1-010-034-VO] 사전검사형식오류목록_방송콘텐츠 한국어-유럽어 번역 말뭉치 데이터_221108":
+        # import pdb
+        # pdb.set_trace()
         for name, sub_class in self.REGISTRY.items():
             file_name = sub_class.execute(file_name, self.data_info)
         try:
@@ -220,3 +242,26 @@ class Correct(CorrectInterface):
         assert len(set(new_tasks) - set(todo_tasks)) == 0, \
             f"이관 대상 과제 중 data_info.csv 상 확인 완료되지 않은 과제가 있습니다.\n{len(set(new_tasks)), len(set(new_tasks) - set(todo_tasks))}\n{set(new_tasks) - set(todo_tasks)}"
         print("검증 완료")
+
+
+if __name__=="__main__":
+    from core.rename_result import correct_register
+    from utils import find_files_in_dir
+    import pandas as pd
+    import local_config as cfg
+
+    ver = "사전"
+    date = "12.06"
+
+
+    file_list = find_files_in_dir(
+            cfg.RESULT_DIR_ORIGINAL.format(ver, date), pattern="^((?!증적용).)*\.(csv|xlsx)$")
+
+    # data info
+    data_info = pd.read_csv(cfg.DATA_INFO_PATH.format(ver), encoding='cp949')
+
+    corrector = correct_register(file_list)
+    corrector.execute(data_info)
+    corrector.remove_older_files(p=True)
+    corrector.delete(cfg.RESULT_DIR_EDIT.format(ver, date))
+    corrector.copy_to(cfg.RESULT_DIR_EDIT.format(ver, date))

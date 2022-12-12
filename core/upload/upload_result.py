@@ -25,7 +25,7 @@ def upload_result(
     correct = correct_register(file_list)
     correct.execute(data_info)
     correct.remove_older_files(p=True)
-    correct.copy_to(cfg.RESULT_DIR_EDIT.format(ver))
+    correct.copy_to(cfg.RESULT_DIR_EDIT.format(ver, date))
 
     # S3 업로드
     uploader = AwsS3Uploader(
@@ -34,5 +34,5 @@ def upload_result(
         aws_bucket=aws_bucket,
         Prefix=Prefix
     )
-    upload_list = find_files_in_dir(cfg.RESULT_DIR_EDIT.format(ver))
+    upload_list = find_files_in_dir(cfg.RESULT_DIR_EDIT.format(ver, date))
     uploader.upload(upload_list, ver)
