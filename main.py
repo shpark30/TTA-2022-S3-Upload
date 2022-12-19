@@ -6,9 +6,11 @@ import local_config as cfg
 import access_info as info
 
 from unzip import unzip
-from core.upload.upload_rule import upload_rule
-from core.upload.upload_result import upload_result
-from core.upload.upload_checklist import upload_checklist
+from rename.rename_result import rename_result
+from rename.rename_checklist import rename_checklist
+from upload.upload_rule import upload_rule
+from upload.upload_result import upload_result
+from upload.upload_checklist import upload_checklist
 
 
 def get_inputs():
@@ -84,7 +86,7 @@ def main(ver, date, **kwargs):
     unzip(ver, date)
     
     while 1:
-        contn = input("업로드를 진행하시겠습니까?(Y/N): ")
+        contn = input("파일명 수정을 진행하시겠습니까?(Y/N): ")
         if contn not in ["Y", "N"]:
             print("\"Y\" 혹은 \"N\"만 입력하세요.")
             continue
@@ -95,17 +97,30 @@ def main(ver, date, **kwargs):
 
     print("완료")
     print("="*50)
+
+    # 이슈리포트 파일명 수정
+    print("체크리스트 파일명 수정")
+    rename_checklist(ver, date)
+    print("완료")
+    print("="*50)
+
+    # 검사 결과 파일명 수정
+    print("검사 결과서 파일명 수정")
+    rename_result(ver, date)
+    print("완료")
+    print("="*50)
     
+    # 검사 규칙 파일 만들기
 
     # 검사 규칙 업로드
     print("검사 규칙 업로드")
-    # upload_rule(ver, date, **kwargs)
+    upload_rule(ver, date, **kwargs)
     print("완료")
     print("="*50)
 
     # 사진 이슈 리포트 업로드
     print("체크리스트 업로드")
-    # upload_checklist(ver, date, **kwargs)
+    upload_checklist(ver, date, **kwargs)
     print("완료")
     print("="*50)
 

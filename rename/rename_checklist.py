@@ -5,20 +5,20 @@ from pathlib import Path
 root = Path(__file__).parent.parent
 sys.path.append(str(root))
 
-from core.correct.correct_etc import (CorrectDuplication, CorrectSequence,
+from rename.correct.correct_etc import (CorrectDuplication, CorrectSequence,
                                       CorrectSpace, CorrectRepeatExtension, CorrectDunder)
-from core.correct.correct_date import CorrectDate
-from core.correct.correct_body import CorrectBody
-from core.correct.correct_type import CorrectReportType, AddReportType, CorrectTypeDelimiter
-from core.correct.correct_id import (CorrectIdDigits, AddTaskId, CorrectIdMaually,
+from rename.correct.correct_date import CorrectDate
+from rename.correct.correct_body import CorrectBody
+from rename.correct.correct_type import CorrectReportType, AddReportType, CorrectTypeDelimiter
+from rename.correct.correct_id import (CorrectIdDigits, AddTaskId, CorrectIdMaually,
                                      AddTaskCode, CorrectIdBracket)
-from core.correct import Correct
+from rename.correct import Correct
 import local_config as cfg
 from utils import find_files_in_dir
 
 
 # 메타클래스 정의(클래스를 생성하는 클래스)
-def correct_register(file_list):
+def checklist_corrector(file_list):
     correct_sub_classes = [
         CorrectDuplication,
         CorrectRepeatExtension,
@@ -53,25 +53,20 @@ def correct_register(file_list):
     for sub_class in correct_sub_classes:
         Correct.register(sub_class)
     return Correct(file_list)
-    # @classmethod
-    # def _correct_underscore(cls, file_name):
-    #     format = "\_\d{1}-\d{3}-\d{3}-[A-Z]{2}\_"
-    #     finder = re.compile(format)
-    #     s, e = finder.search(file_name).span()
-    #     target = file_name[s:e]
-    #     file_name.replace(target, "[" + target[1:9])
-    #     pass
 
-    # @classmethod
-    # def _correct_parentheses(cls, file_name):
-    #     format = "\(\d{1}-\d{3}-\d{3}-[A-Z]{2}\)"
-    #     pass
+def rename_checklist(ver, date):
+    # 수정할 파일명 찾기
+    file_list = find_files_in_dir(
+        cfg.REPORT_DIR_ORIGINAL.format(ver, date), pattern="^.*\.docx$")
 
-#########################################################
-#########################################################
-#########################################################
-#########################################################
+    # data info
+    data_info = pd.read_csv(cfg.DATA_INFO_PATH.format(ver), encoding='cp949')
 
+    # 파일명 수정 및 New directory로 이동
+    correct = checklist_corrector(file_list)
+    correct.execute(data_info)
+    correct.remove_older_files(p=True)
+    correct.copy_to(cfg.REPORT_DIR_EDIT.format(ver, date))
 
 # Test
 if __name__ == "__main__":

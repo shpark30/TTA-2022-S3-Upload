@@ -11,14 +11,24 @@ import access_info as info
 from utils import extract_task_id, path_join, is_third_party_outsourced, find_files_in_dir
 import local_config as cfg
 
-from core.correct.correct_id import (CorrectIdDigits, AddTaskId, CorrectIdMaually,
+from rename.correct.correct_id import (CorrectIdDigits, AddTaskId, CorrectIdMaually,
                                      AddTaskCode, CorrectDelimiter, CorrectIdBracket)
-from core.correct.correct_etc import (CorrectSpace)
+from rename.correct.correct_etc import (CorrectSpace)
 from . import AwsS3Uploader
 
 #####
 complete = "확인 완료"
 #####
+
+def generate_rule(
+    ver,
+    date,
+    aws_access_key_id,
+    aws_secret_access_key,
+    aws_bucket,
+    Prefix
+):
+    pass
 
 
 def upload_rule(
