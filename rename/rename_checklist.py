@@ -50,9 +50,10 @@ def checklist_corrector(file_list):
         CorrectDunder,
     ]
 
+    correct = Correct(file_list)
     for sub_class in correct_sub_classes:
-        Correct.register(sub_class)
-    return Correct(file_list)
+        correct.register(sub_class)
+    return correct
 
 def rename_checklist(ver, date):
     # 수정할 파일명 찾기

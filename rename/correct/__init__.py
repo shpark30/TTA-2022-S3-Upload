@@ -21,33 +21,32 @@ class CorrectInterface:
         raise NotImplementedError
 
 
-class RegistryMetaClass(type):
-    def __new__(cls, name, bases, attrs):
-        # 클래스를 생성한다.
-        new_cls = type.__new__(cls, name, bases, attrs)
-        # 클래스의 속성에 REGISTRY가 있다면
-        # bases 내에 RegistryMetaClass를 메타 클래스로 활용한 슈퍼 클래스가 있다는 의미로 간주하여
-        if hasattr(new_cls, "REGISTRY"):
-            # (다중 상속에도 원하는 방식으로 동작하도록)
-            for base in bases:
-                if hasattr(base, "REGISTRY"):
-                    # REGISTRY에 생성된 클래스를 등록한다.
-                    base.REGISTRY[name] = new_cls
-        # REGISTRY 속성이 없다면
-        else:
-            # RegistryMetaClass가 메타 클래스로 활용되었으므로 REGISTRY 속성을 부여한다.
-            new_cls.REGISTRY = OrderedDict()
-        return new_cls
+# class RegistryMetaClass(type):
+#     def __new__(cls, name, bases, attrs):
+#         # 클래스를 생성한다.
+#         new_cls = type.__new__(cls, name, bases, attrs)
+#         # 클래스의 속성에 REGISTRY가 있다면
+#         # bases 내에 RegistryMetaClass를 메타 클래스로 활용한 슈퍼 클래스가 있다는 의미로 간주하여
+#         if hasattr(new_cls, "REGISTRY"):
+#             # (다중 상속에도 원하는 방식으로 동작하도록)
+#             for base in bases:
+#                 if hasattr(base, "REGISTRY"):
+#                     # REGISTRY에 생성된 클래스를 등록한다.
+#                     base.REGISTRY[name] = new_cls
+#         # REGISTRY 속성이 없다면
+#         else:
+#             # RegistryMetaClass가 메타 클래스로 활용되었으므로 REGISTRY 속성을 부여한다.
+#             new_cls.REGISTRY = OrderedDict()
+#         return new_cls
 
 
 class Correct(CorrectInterface):
-    REGISTRY = {}
-
     def __init__(self, file_list: list):
         assert len(set(file_list)) == len(
             file_list), "파일 리스트에 중복이 있습니다."
         self.old_file_list = file_list
         self.new_file_dict = {}
+        self.REGISTRY = OrderedDict()
 
         self.data_info = None
 
@@ -56,9 +55,8 @@ class Correct(CorrectInterface):
             return len(self.old_file_list)
         return len(self.new_file_dict)
 
-    @classmethod
-    def register(cls, sub_class):
-        cls.REGISTRY[sub_class.__name__] = sub_class
+    def register(self, sub_class):
+        self.REGISTRY[sub_class.__name__] = sub_class
 
     def execute(self, data_info, p=False):
         self.data_info = data_info

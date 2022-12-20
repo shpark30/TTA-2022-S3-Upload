@@ -52,9 +52,10 @@ def result_corrector(file_list):
         CorrectDunder,  # CorrectBody에서 __ 생길 수 있어서 마지막에 해야 함
     ]
 
+    correct = Correct(file_list)
     for sub_class in correct_sub_classes:
-        Correct.register(sub_class)
-    return Correct(file_list)
+        correct.register(sub_class)
+    return correct
 
 def rename_result(ver, date):
     # 수정할 파일명 찾기
