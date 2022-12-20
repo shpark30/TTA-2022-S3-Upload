@@ -1,5 +1,10 @@
 import pandas as pd
 
+import sys
+from pathlib import Path
+root = Path(__file__).parent.parent
+sys.path.append(str(root))
+
 import local_config as cfg
 from utils import path_join, find_files_in_dir
 
@@ -30,12 +35,12 @@ def result_corrector(file_list):
 
         CorrectIdBracket,
 
+        # correct date
+        CorrectDate,
+
         # correct type
         CorrectResultType,
         CorrectTypeDelimiter,
-
-        # correct date
-        CorrectDate,
 
         # correct body
         CorrectBody,
@@ -120,11 +125,15 @@ if __name__ == "__main__":
 
     ]
     file_list = [path_join(root, file) for file in file_list]
-    data_info = pd.read_csv(cfg.DATA_INFO_PATH.format(ver), encoding="cp949")
-    correct = correct_register(file_list)
+    file_list = find_files_in_dir("W:/2022 TTA/2022 이관/사전/검사 결과/12.12", pattern="^((?!증적용).)*\.(csv|xlsx)$")
+    data_info = pd.read_csv(cfg.DATA_INFO_PATH.format("사전"), encoding="cp949")
+    correct = result_corrector(file_list)
 
     old_files_len = len(correct)
-    correct.execute(p=True)
+    import pdb
+    pdb.set_trace()
+    rename_result("사전", "12.12")
+    correct.execute(data_info, p=True)
     before_remove_len = len(correct)
 
     correct.remove_older_files(p=True)

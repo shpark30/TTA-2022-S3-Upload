@@ -22,25 +22,9 @@ complete = "확인 완료"
 
 def generate_rule(
     ver,
-    date,
-    aws_access_key_id,
-    aws_secret_access_key,
-    aws_bucket,
-    Prefix
-):
-    pass
-
-
-def upload_rule(
-    ver,
-    date,
-    aws_access_key_id,
-    aws_secret_access_key,
-    aws_bucket,
-    Prefix
+    date
 ):
     save_path = cfg.RULE_DIR_ORIGIN.format(ver, date)
-    edit_path = cfg.RULE_DIR_EDIT.format(ver, date)
     engine = db.create_engine(info.url)
 
     rules: pd.DataFrame = pd.read_sql(info.rule_query, engine)
@@ -62,11 +46,10 @@ def upload_rule(
         how="left",
         on="dgnss_id")
 
-    has_diagnosed_cond: pd.Series = rules["exec_sttus_cd"] == "COMPLETE"
+    has_diagnosed_cond: pd.Series = rules.loc[:, "exec_sttus_cd"] == "COMPLETE"
     diag_datasets: pd.DataFrame = rules[has_diagnosed_cond]
 
     # 과제 번호 추출
-
     def except_extract_task_id(text):
         try:
             return extract_task_id(text)
@@ -74,43 +57,41 @@ def upload_rule(
             print(e)
             return
 
-    diag_datasets['group_id'] = diag_datasets['group_nm'].apply(
+    diag_datasets.loc[:, 'group_id'] = diag_datasets.loc[:, 'group_nm'].apply(
         except_extract_task_id)
-    diag_datasets['task_id'] = diag_datasets['dgnss_nm'].apply(
+    diag_datasets.loc[:, 'task_id'] = diag_datasets.loc[:, 'dgnss_nm'].apply(
         except_extract_task_id)
 
     # group_id와 task_id 일치 여부 확인
-    according_cond: pd.Series = diag_datasets.loc[:,
-                                                  'task_id'] != diag_datasets.loc[:, 'group_id']
+    according_cond: pd.Series = diag_datasets.loc[:, 'task_id'] != diag_datasets.loc[:, 'group_id']
     if len(diag_datasets[according_cond]) > 0:
         display(diag_datasets[according_cond])
         raise Exception("group_id와 task_id가 일치하지 않는 과제가 있습니다.")
 
     # 사전/최종, 확인 완료 필터링
     # 사전, 최종 구분하기
-
     def extract_version(text):
         ver = text.split("_")[-1]
         assert ver in ["사전", "최종"], f"{text}에 \"사전\", \"최종\"이 없습니다."
         return ver
 
     diag_datasets.loc[:, 'ver'] = diag_datasets.loc[:, 'group_nm'].apply(extract_version)
-    ver_cond: pd.Series = diag_datasets['ver'] == ver
+    ver_cond: pd.Series = diag_datasets.loc[:, 'ver'] == ver
 
     # 확인 완료 구분하기
     data_info: pd.DataFrame = pd.read_csv(
         cfg.DATA_INFO_PATH.format(ver), encoding='cp949')
-    complete_id_list: pd.Series = data_info['number'][data_info[date] == complete].tolist(
-    )
-    complete_cond = diag_datasets["task_id"].apply(
-        lambda x: x in complete_id_list)
+    date_columns = list(data_info.columns)
+    prev_date = date_columns[date_columns.index(date)-1]
+    complete_id_list: pd.Series = data_info['number'][
+        (data_info[prev_date]!=complete)&(data_info[date]==complete)].tolist()
+    complete_cond = diag_datasets.loc[:, "task_id"].apply(lambda x: x in complete_id_list)
 
     # 필터링
     target_datasets: pd.DataFrame = diag_datasets[(ver_cond) & (complete_cond)]
 
     # 파일명 생성
     # 데이터셋명 수정
-
     def correct_id(text, correctors: list):
         for corrector in correctors:
             text = corrector.execute(text, data_info)
@@ -135,14 +116,13 @@ def upload_rule(
         raise Exception("과제 번호가 유효하지 않은 데이터셋이 있습니다.")
 
     # 파일명 생성
-
     def _replace_slash(text):
         if '/' not in text:
             return text
 
-        print("before:", text)
+        # print("before:", text)
         text = text.replace("/", "·")
-        print("after:", text)
+        # print("after:", text)
         return text
 
     def _naming(text):
@@ -172,15 +152,16 @@ def upload_rule(
             json.dump(json_date, outfile, indent='\t', allow_nan=False)
 
     # 제 3자 품질 검사 규칙
-    # 검사 결과 디렉토리에서 json 데이터 불러오기
+    ## 검사 결과 디렉토리에서 json 데이터 불러오기
     json_files = find_files_in_dir(
         cfg.RESULT_DIR_ORIGINAL.format(ver, date), pattern='\.json$')
 
-    # 확인완료 필터링
-    json_files = list(filter(lambda x: extract_task_id(x)
-                             in complete_cond, json_files))
+    ## 확인완료 필터링
+    json_files = list(filter(lambda x: extract_task_id(x) in complete_cond, json_files))
+    if len(json_files) == 0:
+        return
 
-    # 저장
+    ## 저장
     def extract_task_id_code(text):
         id_format = "\d-\d{3}-\d{3}-[A-Z]{2}"
         finder = re.compile(id_format)
@@ -207,25 +188,46 @@ def upload_rule(
             continue
         shutil.copy(json_file, new_file)
 
-    # target dir에 copy
-    for json_file in find_files_in_dir(save_path, pattern="^.*\.json$"):
-        copy_path = path_join(edit_path, json_file.split("/")[-1])
-        if os.path.exists(copy_path):
-            continue
-        shutil.copy(json_file, copy_path)
+    # # target dir에 copy
+    # for json_file in find_files_in_dir(save_path, pattern="^.*\.json$"):
+    #     copy_path = path_join(path, json_file.split("/")[-1])
+    #     if os.path.exists(copy_path):
+    #         continue
+    #     shutil.copy(json_file, copy_path)
+
+
+def upload_rule(
+    ver,
+    date,
+    aws_access_key_id,
+    aws_secret_access_key,
+    aws_bucket,
+    Prefix
+):
+    path = cfg.RULE_DIR_ORIGIN.format(ver, date)
 
     # 규칙 업로드
-    ## 디렉토리 검증
-    rule_files = find_files_in_dir(edit_path, pattern="^.*\.json$")
+    rule_files = find_files_in_dir(path, pattern="^.*\.json$")
     rule_files_id = list(map(extract_task_id, rule_files))
-    assert len(set(rule_files_id)-set(complete_id_list)
-               ) == 0, f"{edit_path}에 확인 완료되지 않은 과제의 검사 규칙이 포함되어 있습니다.\n{set(rule_files_id)-set(complete_id_list)}"
-    if len(set(complete_id_list)-set(rule_files_id)) != 0:
-        print(f"{edit_path}에 확인 완료된 과제의 검사 규칙({len(set(complete_id_list)-set(rule_files_id))})이 없습니다.\n{set(complete_id_list)-set(rule_files_id)}")
-        contn = input("계속 진행하시겠습니까?(Y/N): ")
-        assert contn in ["Y", "N"]
-        if contn == "N":
-            raise
+
+    ## 디렉토리 검증
+    data_info: pd.DataFrame = pd.read_csv(
+        cfg.DATA_INFO_PATH.format(ver), encoding='cp949')
+    date_columns = list(data_info.columns)
+    prev_date = date_columns[date_columns.index(date)-1]
+    complete_id_list: pd.Series = data_info['number'][
+        (data_info[prev_date]!=complete)&(data_info[date]==complete)].tolist()
+
+    assert len(set(rule_files_id)-set(complete_id_list)) == 0,\
+        f"{path}에 확인 완료되지 않은 과제의 검사 규칙이 포함되어 있습니다.\n{set(rule_files_id)-set(complete_id_list)}"
+    assert len(set(complete_id_list)-set(rule_files_id)) == 0,\
+        f"{path}에 확인 완료된 과제의 검사 규칙({len(set(complete_id_list)-set(rule_files_id))})이 없습니다.\n{set(complete_id_list)-set(rule_files_id)}"
+    # if len(set(complete_id_list)-set(rule_files_id)) != 0:
+    #     print(f"{path}에 확인 완료된 과제의 검사 규칙({len(set(complete_id_list)-set(rule_files_id))})이 없습니다.\n{set(complete_id_list)-set(rule_files_id)}")
+    #     contn = input("계속 진행하시겠습니까?(Y/N): ")
+    #     assert contn in ["Y", "N"]
+    #     if contn == "N":
+    #         raise
     
     ## 업로드
     uploader = AwsS3Uploader(

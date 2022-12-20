@@ -27,7 +27,7 @@ def validate_date(ver, date):
         raise Exception(f"{date}는 최신 날짜가 아닙니다.")
 
 
-def unzip_result(data_info, ver, date):
+def unzip_result(ver, date):
     # 디렉토리 생성
     target_dir = cfg.RESULT_DIR_ORIGINAL.format(ver, date)
     if not os.path.exists(target_dir):

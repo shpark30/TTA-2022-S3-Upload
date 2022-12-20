@@ -8,7 +8,7 @@ import access_info as info
 from unzip import unzip_result, unzip_checklist
 from rename.rename_result import rename_result
 from rename.rename_checklist import rename_checklist
-from upload.upload_rule import upload_rule
+from upload.upload_rule import generate_rule, upload_rule
 from upload.upload_result import upload_result
 from upload.upload_checklist import upload_checklist
 
@@ -65,7 +65,6 @@ def validate_dirs(ver, date):
         cfg.REPORT_DIR_ORIGINAL.format(ver, date),
         cfg.REPORT_DIR_EDIT.format(ver, date),
         cfg.RULE_DIR_ORIGIN.format(ver, date),
-        cfg.RULE_DIR_EDIT.format(ver, date),
     ]:
         if not os.path.exists(p):
             raise Exception(f"{p} 경로가 존재하지 않습니다.")
@@ -88,6 +87,12 @@ def main(ver, date, **kwargs):
     # 체크리스트 압축 풀기
     print("체크리스트 압축 풀기")
     unzip_checklist(ver, date)
+
+    # 검사 규칙 파일 만들기
+    print("검사 규칙 생성")
+    generate_rule(ver, date)
+    print("완료")
+    print("="*50)
     
     while 1:
         contn = input("파일명 수정을 진행하시겠습니까?(Y/N): ")
@@ -110,19 +115,20 @@ def main(ver, date, **kwargs):
 
     # 검사 결과 파일명 수정
     print("검사 결과서 파일명 수정")
+    import pdb
+    pdb.set_trace()
     rename_result(ver, date)
     print("완료")
     print("="*50)
-    
-    # 검사 규칙 파일 만들기
 
-    # 검사 규칙 업로드
-    print("검사 규칙 업로드")
-    upload_rule(ver, date, **kwargs)
-    print("완료")
-    print("="*50)
+    while 1:
+        contn = input("업로드를 진행하시겠습니까?(Y/N): ")
+        if contn not in ["Y", "N"]:
+            print("\"Y\" 혹은 \"N\"만 입력하세요.")
+            continue
+        break
 
-    # 사진 이슈 리포트 업로드
+    # 체크리스트 업로드
     print("체크리스트 업로드")
     upload_checklist(ver, date, **kwargs)
     print("완료")
@@ -131,6 +137,12 @@ def main(ver, date, **kwargs):
     # 검사 결과서 업로드
     print("검사 결과서 업로드")
     upload_result(ver, date, **kwargs)
+    print("완료")
+    print("="*50)
+
+    # 검사 규칙 업로드
+    print("검사 규칙 업로드")
+    upload_rule(ver, date, **kwargs)
     print("완료")
     print("="*50)
 
