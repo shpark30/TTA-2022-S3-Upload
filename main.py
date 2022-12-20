@@ -5,7 +5,7 @@ import pandas as pd
 import local_config as cfg
 import access_info as info
 
-from unzip import unzip
+from unzip import unzip_result, unzip_checklist
 from rename.rename_result import rename_result
 from rename.rename_checklist import rename_checklist
 from upload.upload_rule import upload_rule
@@ -83,7 +83,11 @@ def validate_dirs(ver, date):
 def main(ver, date, **kwargs):
     # 결과서 압축 풀기
     print("결과서 압축 풀기")
-    unzip(ver, date)
+    unzip_result(ver, date)
+
+    # 체크리스트 압축 풀기
+    print("체크리스트 압축 풀기")
+    unzip_checklist(ver, date)
     
     while 1:
         contn = input("파일명 수정을 진행하시겠습니까?(Y/N): ")
