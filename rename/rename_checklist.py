@@ -11,7 +11,7 @@ from rename.correct.correct_date import CorrectDate
 from rename.correct.correct_body import CorrectBody
 from rename.correct.correct_type import CorrectReportType, AddReportType, CorrectTypeDelimiter
 from rename.correct.correct_id import (CorrectIdDigits, AddTaskId, CorrectIdMaually,
-                                     AddTaskCode, CorrectIdBracket)
+                                     AddTaskCode, CorrectIdDelimiter, CorrectIdBracket)
 from rename.correct import Correct
 import local_config as cfg
 from utils import find_files_in_dir
@@ -28,7 +28,7 @@ def checklist_corrector(file_list):
         AddTaskId,
         # CorrectTaskId,
         CorrectIdMaually,
-        # CorrectIdDelimiter,
+        CorrectIdDelimiter,
         AddTaskCode,
         CorrectIdBracket,
 

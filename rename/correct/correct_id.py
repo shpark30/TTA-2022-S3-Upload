@@ -5,11 +5,12 @@ import re
 class CorrectIdDigits(CorrectInterface):
     @classmethod
     def execute(cls, file_name, *args, **kwargs):
-        file_name = cls.__correct_digits(file_name)
+        file_name = cls.__correct_digits_123(file_name)
+        file_name = cls.__correct_digits_113(file_name)
         return file_name
 
     @classmethod
-    def __correct_digits(cls, file_name) -> bool:
+    def __correct_digits_123(cls, file_name) -> bool:
         """
         2-49-175 -> 2-049-175
         """
@@ -21,6 +22,22 @@ class CorrectIdDigits(CorrectInterface):
         old = error.group()
         new = old.split("-")  # old[:2] + "0" + old[2:]
         new[1] = "0" + new[1]
+        new = "-".join(new)
+        return file_name.replace(old, new)
+
+    @classmethod
+    def __correct_digits_113(cls, file_name) -> bool:
+        """
+        3-8-283 -> 3-008-283
+        """
+        format = "\d-\d-\d{3}"
+        finder = re.compile(format)
+        error = finder.search(file_name)
+        if error is None:
+            return file_name
+        old = error.group()
+        new = old.split("-")  # old[:2] + "0" + old[2:]
+        new[1] = "00" + new[1]
         new = "-".join(new)
         return file_name.replace(old, new)
 
@@ -61,7 +78,7 @@ class AddTaskId(CorrectInterface):
         return file_name
 
 
-class CorrectDelimiter(CorrectInterface):
+class CorrectIdDelimiter(CorrectInterface):
     @classmethod
     def execute(cls, file_name, *args, **kwargs):
         for error_format, correct_method in cls.__get_correct_dict().items():

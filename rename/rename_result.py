@@ -10,7 +10,7 @@ from utils import path_join, find_files_in_dir
 
 from rename.correct import Correct
 from rename.correct.correct_id import (CorrectIdDigits, AddTaskId, CorrectIdMaually,
-                                     AddTaskCode, CorrectIdBracket)
+                                     AddTaskCode, CorrectIdDelimiter, CorrectIdBracket)
 from rename.correct.correct_type import CorrectResultType, CorrectTypeDelimiter
 from rename.correct.correct_body import CorrectBody
 from rename.correct.correct_date import CorrectDate
@@ -30,7 +30,7 @@ def result_corrector(file_list):
         AddTaskId,
         CorrectIdMaually,
         # CorrectTaskId,
-        # CorrectIdDelimiter,
+        CorrectIdDelimiter,
         AddTaskCode,
 
         CorrectIdBracket,

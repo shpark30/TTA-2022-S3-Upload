@@ -12,7 +12,7 @@ from utils import extract_task_id, path_join, is_third_party_outsourced, find_fi
 import local_config as cfg
 
 from rename.correct.correct_id import (CorrectIdDigits, AddTaskId, CorrectIdMaually,
-                                     AddTaskCode, CorrectDelimiter, CorrectIdBracket)
+                                     AddTaskCode, CorrectIdDelimiter, CorrectIdBracket)
 from rename.correct.correct_etc import (CorrectSpace)
 from . import AwsS3Uploader
 
@@ -99,7 +99,7 @@ def generate_rule(
 
     corrected: pd.Series = target_datasets['dgnss_nm'].apply(lambda x: correct_id(x, [
         CorrectIdDigits,
-        CorrectDelimiter,
+        CorrectIdDelimiter,
         AddTaskId,
         CorrectIdMaually,
         AddTaskCode,
