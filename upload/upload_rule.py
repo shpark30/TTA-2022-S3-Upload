@@ -154,10 +154,10 @@ def generate_rule(
     # 제 3자 품질 검사 규칙
     ## 검사 결과 디렉토리에서 json 데이터 불러오기
     json_files = find_files_in_dir(
-        cfg.RESULT_DIR_ORIGINAL.format(ver, date), pattern='\.json$')
+        cfg.RESULT_DIR_ORIGINAL.format(ver, date), pattern='.*\.json$')
 
     ## 확인완료 필터링
-    json_files = list(filter(lambda x: extract_task_id(x) in complete_cond, json_files))
+    json_files = list(filter(lambda x: extract_task_id(x) in complete_id_list, json_files))
     if len(json_files) == 0:
         return
 

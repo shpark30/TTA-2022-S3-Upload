@@ -115,8 +115,6 @@ def main(ver, date, **kwargs):
 
     # 검사 결과 파일명 수정
     print("검사 결과서 파일명 수정")
-    import pdb
-    pdb.set_trace()
     rename_result(ver, date)
     print("완료")
     print("="*50)
